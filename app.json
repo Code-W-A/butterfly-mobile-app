@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Mstore",
-    "slug": "mstore",
+    "name": "Butterfly",
+    "slug": "butterfly",
     "version": "5.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -26,6 +28,19 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "firebase": {
+        "apiKey": "",
+        "authDomain": "",
+        "projectId": "",
+        "storageBucket": "",
+        "messagingSenderId": "",
+        "appId": ""
+      },
+      "eas": {
+        "projectId": "d1ff8e00-5c95-4d8f-8ea7-35644ca2a900"
+      }
     }
   }
 }
