@@ -47,7 +47,6 @@
     "react-native-app-intro-slider": "^4.0.4",
     "react-native-country-picker-modal": "^2.0.0",
     "react-native-drawer": "https://codeload.github.com/luyx2412/react-native-drawer/tar.gz/8cd0f922d3e49e16a8c5c39b8c94606a0179f27f",
-    "react-native-fbsdk-next": "^11.2.1",
     "react-native-fluid-slider": "https://codeload.github.com/luyx2412/react-native-fluid-slider/tar.gz/0203fb4bc540abe22959739b86d93ff174e4285e",
     "react-native-gesture-handler": "~2.9.0",
     "react-native-image-zoom-viewer": "^3.0.1",
