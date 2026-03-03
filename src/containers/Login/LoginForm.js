@@ -4,7 +4,7 @@ import { get, has, trim } from 'lodash';
 import { WooWorker } from 'api-ecommerce';
 import { useSelector } from 'react-redux';
 
-import { Icons, Languages, Styles, withTheme } from '@common';
+import { Color, Icons, Languages, Styles, withTheme } from '@common';
 import { Icon, toast } from '@app/Omni';
 import WPUserAPI from '@app/services/WPUserAPI';
 
@@ -15,6 +15,7 @@ const LoginForm = React.memo(props => {
   const [state, setState] = React.useState({
     username: '',
     password: '',
+    showPassword: false,
   });
   const {
     theme: {
@@ -35,6 +36,13 @@ const LoginForm = React.memo(props => {
         [inputName]: value,
       };
     });
+  };
+
+  const onTogglePasswordVisibility = () => {
+    setState(prevState => ({
+      ...prevState,
+      showPassword: !prevState.showPassword,
+    }));
   };
 
   const onLoginPressHandle = async () => {
@@ -103,9 +111,16 @@ const LoginForm = React.memo(props => {
           placeholderTextColor={placeholder}
           placeholder={Languages.password}
           onChangeText={value => onChangeText('password', value)}
-          secureTextEntry
+          secureTextEntry={!state.showPassword}
           returnKeyType="go"
           value={state.password}
+        />
+        <Icon
+          name={state.showPassword ? 'eye-off' : 'eye'}
+          size={20}
+          color={state.showPassword ? Color.primary : text}
+          style={styles.passwordEyeButton}
+          onPress={onTogglePasswordVisibility}
         />
       </View>
       <ButtonIndex

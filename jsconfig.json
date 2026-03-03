@@ -4,15 +4,19 @@
     "paths": {
       "@common": ["common"],
       "@containers": ["containers"],
+      "@cart/*": ["containers/Cart/*"],
       "@components": ["components"],
+      "@custom/*": ["components/Custom/*"],
       "@navigation": ["navigation"],
       "@images": ["images"],
+      "@assets/*": ["../assets/*"],
       "@services": ["services"],
       "@selectors": ["selectors"],
       "@store": ["store"],
       "@utils": ["utils"],
       "@ExpoCustom": ["Expo"],
       "@redux": ["redux"],
+      "react-redux": ["store/reactReduxCompat"],
 
       "@app/*": ["*"]
     }

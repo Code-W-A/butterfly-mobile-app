@@ -4,6 +4,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { View, Text, TouchableOpacity, I18nManager } from 'react-native';
 import Icon from '@expo/vector-icons/Entypo';
+import MaterialCommunityIcon from '@expo/vector-icons/MaterialCommunityIcons';
 import _ from 'lodash';
 import { withTheme, Config } from '@common';
 
@@ -14,6 +15,10 @@ class UserProfileItem extends PureComponent {
     label: PropTypes.string,
     value: PropTypes.string,
     icon: PropTypes.any,
+    labelColor: PropTypes.string,
+    valueColor: PropTypes.string,
+    leadingIconName: PropTypes.string,
+    leadingIconColor: PropTypes.string,
   };
 
   static defaultProps = {
@@ -21,7 +26,16 @@ class UserProfileItem extends PureComponent {
   };
 
   render() {
-    const { label, value, onPress, icon } = this.props;
+    const {
+      label,
+      value,
+      onPress,
+      icon,
+      labelColor,
+      valueColor,
+      leadingIconName,
+      leadingIconColor,
+    } = this.props;
     const {
       theme: {
         colors: { lineColor, text },
@@ -35,9 +49,21 @@ class UserProfileItem extends PureComponent {
         onPress={onPress}
         style={[styles.row, dark && { borderColor: lineColor }]}
       >
-        <Text style={styles.leftText}>{label}</Text>
+        <View style={styles.leftContainer}>
+          {leadingIconName ? (
+            <MaterialCommunityIcon
+              name={leadingIconName}
+              size={19}
+              color={leadingIconColor || '#E94190'}
+              style={styles.leadingIcon}
+            />
+          ) : null}
+          <Text style={[styles.leftText, labelColor ? { color: labelColor } : null]}>
+            {label}
+          </Text>
+        </View>
         <View style={styles.rightContainer}>
-          <Text style={styles.rightText(text)}>{value}</Text>
+          <Text style={styles.rightText(valueColor || text)}>{value}</Text>
           {icon && _.isBoolean(icon) && (
             <Icon
               style={[

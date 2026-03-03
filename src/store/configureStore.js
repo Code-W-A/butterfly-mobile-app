@@ -1,59 +1,55 @@
 /** @format */
-import Reactotron from 'reactotron-react-native';
-import { applyMiddleware, compose, createStore } from 'redux';
-import thunk from 'redux-thunk';
 
-import reducers from '@redux';
+import ReactNativeConstants from 'expo-constants';
+
+import rootReducer, { PERSIST_BLACKLIST } from '@redux';
 import { Constants } from '@common';
-import { connectConsoleToReactotron, DEV_ENV } from '@app/Omni';
+import createAppStore from './createAppStore';
+import { attachPersistence, hydrateStore } from './persistence';
 import './../../ReactotronConfig';
 
-const middleware = [
-  thunk,
-  // more middleware
-];
+const DEV_ENV =
+  typeof __DEV__ !== 'undefined'
+    ? __DEV__
+    : Boolean(ReactNativeConstants?.expoConfig?.extra);
 
-// const store = createStore(reducers, {}, applyMiddleware(...middleware));
+const PERSIST_DEBOUNCE_MS = 250;
 
 const configureStore = () => {
-  let store = null;
-  if (DEV_ENV) {
-    if (Constants.useReactotron) {
-      store = createStore(
-        reducers,
-        {},
-        compose(applyMiddleware(...middleware), Reactotron.createEnhancer()),
-      );
-      connectConsoleToReactotron();
-    } else {
-      const composeEnhancers =
-        window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-      store = composeEnhancers(applyMiddleware(...middleware))(createStore)(
-        reducers,
-      );
+  const store = createAppStore(rootReducer);
 
-      if (module.hot) {
-        // Enable Webpack hot module replacement for reducers
-        module.hot.accept(reducers, () => {
-          const nextRootReducer = reducers;
-          store.replaceReducer(nextRootReducer);
-        });
-      }
-
-      // show network react-native-debugger
-      // only show on IOS, android bug
-      // if (Platform.OS === "ios") {
-      global.XMLHttpRequest = global.originalXMLHttpRequest
-        ? global.originalXMLHttpRequest
-        : global.XMLHttpRequest;
-      global.FormData = global.originalFormData
-        ? global.originalFormData
-        : global.FormData;
-    }
-  } else {
-    store = compose(applyMiddleware(...middleware))(createStore)(reducers);
+  if (DEV_ENV && !Constants.useReactotron) {
+    global.XMLHttpRequest = global.originalXMLHttpRequest
+      ? global.originalXMLHttpRequest
+      : global.XMLHttpRequest;
+    global.FormData = global.originalFormData
+      ? global.originalFormData
+      : global.FormData;
   }
+
   return store;
 };
 
-export default configureStore();
+const store = configureStore();
+let persistenceCleanup = null;
+
+export const initializeStorePersistence = async () => {
+  await hydrateStore({
+    store,
+    blacklist: PERSIST_BLACKLIST,
+  });
+
+  if (typeof persistenceCleanup === 'function') {
+    persistenceCleanup();
+  }
+
+  persistenceCleanup = attachPersistence({
+    store,
+    blacklist: PERSIST_BLACKLIST,
+    debounceMs: PERSIST_DEBOUNCE_MS,
+  });
+
+  return persistenceCleanup;
+};
+
+export default store;

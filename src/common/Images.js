@@ -1,7 +1,8 @@
 /** @format */
 
 const Images = {
-  Logo: require('@images/logo.png'),
+  Logo: require('@images/logo-main.png'),
+  OpenTheWorldLogo: require('@images/logo-butterfly/opentheworldlogo.png'),
   defaultAvatar: require('@images/default_avatar.png'),
   categoryPlaceholder: require('@images/category_placehodler.png'),
   splashScreen: require('@images/splash_screen.png'),

@@ -104,7 +104,7 @@ export default StyleSheet.create({
     backgroundColor: 'rgba(95, 209, 176, 0.9)',
   },
   menuColor: {
-    backgroundColor: '#2AB5B3',
+    backgroundColor: '#E94190',
   },
   menuColorWide: {
     backgroundColor: 'rgba(45, 47, 59, 1)',

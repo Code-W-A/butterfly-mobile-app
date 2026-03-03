@@ -3,7 +3,7 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Text, TouchableOpacity, I18nManager } from 'react-native';
-import TimeAgo from '@custom/react-native-timeago';
+import TimeAgo from 'react-native-timeago';
 import { WishListIcon, ImageCache, ProductPrice, Rating } from '@components';
 import css from './style';
 import { withTheme } from '@common';

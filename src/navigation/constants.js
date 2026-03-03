@@ -28,10 +28,18 @@ export const ROUTER = {
   ADDRESS: 'Address',
   ADD_ADDRESS: 'AddAddress',
   SETTINGS: 'SettingScreen',
+  EDIT_PROFILE: 'EditProfileScreen',
+  CHANGE_EMAIL: 'ChangeEmailScreen',
+  CHANGE_PASSWORD: 'ChangePasswordScreen',
+  PRIVACY_POLICY: 'PrivacyPolicyScreen',
+  TERMS_AND_CONDITIONS: 'TermsAndConditionsScreen',
+  RECOMMENDATION_HISTORY: 'RecommendationHistoryLibraryScreen',
+  RECOMMENDATION_FAVORITES: 'RecommendationFavoritesLibraryScreen',
 
   // Login
   LOGIN: 'LoginScreen',
   SIGN_UP: 'SignUpScreen',
+  FORGOT_PASSWORD: 'ForgotPasswordScreen',
 
   // My Order
   MY_ORDERS: 'MyOrdersScreen',
@@ -48,6 +56,7 @@ export const ROUTER = {
   USER_PROFILE_STACK: 'UserProfileScreen',
   MY_ORDERS_STACK: 'MyOrders',
   NEWS_STACK: 'NewsScreen',
+  RECOMMENDATION_STACK: 'RecommendationStack',
   LOGIN_STACK: 'LoginStack',
   CATEGORY_DETAIL_STACK: 'CategoryDetail',
 
@@ -58,6 +67,12 @@ export const ROUTER = {
 
   // App
   ROOT: 'RootNavigator',
+  RECOMMENDATION_ROOT: 'RecommendationRootNavigator',
+  RECOMMENDATION_AUTH: 'RecommendationAuth',
+  RECOMMENDATION_QUESTIONNAIRE: 'RecommendationQuestionnaire',
+  RECOMMENDATION_RESULTS: 'RecommendationResults',
+  RECOMMENDATION_DETAIL: 'RecommendationDetail',
+  RECOMMENDATION_SPECIALIST_CONTACT: 'RecommendationSpecialistContact',
 
   DETAIL: 'DetailScreen',
 };

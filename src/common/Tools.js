@@ -6,7 +6,10 @@ import { decode } from 'html-entities';
 import truncate from 'lodash/truncate';
 import URI from 'urijs';
 import currencyFormatter from 'currency-formatter';
-import { Config, Constants, Images, Languages } from '@common';
+import Config from './Config';
+import Constants from './Constants';
+import Images from './Images';
+import Languages from './Languages';
 
 export default class Tools {
   /**

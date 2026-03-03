@@ -1,6 +1,5 @@
 /** @format */
 
-import { createActions, handleActions } from 'redux-actions';
 import { WooWorker } from 'api-ecommerce';
 
 const types = {
@@ -9,11 +8,19 @@ const types = {
   BRANDS_FAILURE: 'BRANDS_FAILURE',
 };
 
-export const { brandsFetching, brandsSuccess, brandsFailure } = createActions(
-  types.BRANDS_FETCHING,
-  types.BRANDS_SUCCESS,
-  types.BRANDS_FAILURE,
-);
+export const brandsFetching = () => ({
+  type: types.BRANDS_FETCHING,
+});
+
+export const brandsSuccess = payload => ({
+  type: types.BRANDS_SUCCESS,
+  payload,
+});
+
+export const brandsFailure = payload => ({
+  type: types.BRANDS_FAILURE,
+  payload,
+});
 
 export const actions = {
   fetchBrands: () => async dispatch => {
@@ -32,24 +39,31 @@ export const actions = {
 
 const defaultState = { list: [], isFetching: false, error: null };
 
-export const reducer = handleActions(
-  {
-    [brandsFetching]: state => ({
-      ...state,
-      isFetching: true,
-      error: null,
-    }),
-    [brandsSuccess]: (state, { payload }) => ({
-      ...state,
-      list: payload,
-      isFetching: false,
-      error: null,
-    }),
-    [brandsFailure]: (state, { payload }) => ({
-      ...state,
-      isFetching: false,
-      error: payload,
-    }),
-  },
-  defaultState,
-);
+export const reducer = (state = defaultState, action) => {
+  switch (action.type) {
+    case types.BRANDS_FETCHING:
+      return {
+        ...state,
+        isFetching: true,
+        error: null,
+      };
+
+    case types.BRANDS_SUCCESS:
+      return {
+        ...state,
+        list: action.payload,
+        isFetching: false,
+        error: null,
+      };
+
+    case types.BRANDS_FAILURE:
+      return {
+        ...state,
+        isFetching: false,
+        error: action.payload,
+      };
+
+    default:
+      return state;
+  }
+};

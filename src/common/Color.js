@@ -1,14 +1,14 @@
 /** @format */
 
 export default {
-  primary: '#3FC1BE', // '#FF0074', //
+  primary: '#E94190',
 
   // navigation bar
-  headerTintColor: '#1CB5B4',
+  headerTintColor: '#E94190',
 
   // bottom tab bar
   tabbar: 'rgba(255, 255, 255, 1)',
-  tabbarTint: '#3FC1BE', // '#FF0074', //
+  tabbarTint: '#E94190',
   tabbarColor: '#ccc',
 
   // wishlist
@@ -16,16 +16,16 @@ export default {
 
   // step indicate from the checkout page
   checkout: {
-    stepActive: '#2AB5B3',
+    stepActive: '#E94190',
   },
 
   // Product tabs
   product: {
-    TabActive: '#3FC1BE',
+    TabActive: '#E94190',
     TabDeActive: 'white',
     TabActiveText: '#333',
     TabText: '#333',
-    BuyNowButton: '#3FC1BE',
+    BuyNowButton: '#E94190',
     OutOfStockButton: '#a44',
     ViewBorder: '#bcbebb',
     Text: '#333',
@@ -74,7 +74,7 @@ export default {
   attributes: {
     black: '#333',
     red: '#DF3737',
-    green: '#2AB5B3',
+    green: '#E94190',
     blue: '#38B1E7',
     yellow: '#FDF12C',
   },
@@ -87,12 +87,12 @@ export default {
   darkRed: '#8B0000',
   red: '#FF0000',
   lightgrey: '#D3D3D3',
-  green: '#2AB5B3',
-  blue: '#0091ea',
-  lightBlue: '#9ddaff',
-  blue1: 'rgba(30, 165, 233, 1)',
-  blue2: 'rgba(3, 207, 254, 1)',
+  green: '#E94190',
+  blue: '#E94190',
+  lightBlue: '#E94190',
+  blue1: '#E94190',
+  blue2: '#E94190',
 
   starRating: '#FDF12C',
-  backgroundFlashSales: ['rgba(6, 188, 198, 1)', 'rgba(244, 244, 246, 0.9)'],
+  backgroundFlashSales: ['#E94190', 'rgba(244, 244, 246, 0.9)'],
 };

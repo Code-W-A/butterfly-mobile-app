@@ -35,7 +35,7 @@ export default {
     {
       category: 55,
       image: require('@images/categories_icon/ic_shorts.png'),
-      colors: ['#4facfe', '#00f2fe'],
+      colors: ['#E94190', '#F7A3CC'],
       label: 'sport',
     },
     {
@@ -67,7 +67,7 @@ export default {
     {
       category: 55,
       image: require('@images/categories_icon/ic_shorts.png'),
-      colors: ['#4facfe', '#00f2fe'],
+      colors: ['#E94190', '#F7A3CC'],
       label: 'لكن',
     },
     {
@@ -132,8 +132,8 @@ export default {
   },
   showStatusBar: true,
   LogoImage: require('@images/logo-main.png'),
-  LogoWithText: require('@images/logo_with_text.png'),
-  LogoLoading: require('@images/logo.png'),
+  LogoWithText: require('@images/logo-main.png'),
+  LogoLoading: require('@images/logo-main.png'),
 
   showAdmobAds: false,
   AdMob: {
@@ -145,28 +145,34 @@ export default {
   appFacebookId: '501847534057136',
   CustomPages: { contact_id: 10941 },
   WebPages: { marketing: 'http://inspireui.com' },
+  Features: {
+    recommendationOnlyMode: true,
+    alwaysShowOnboardingInDev: true,
+  },
 
   intro: [
     {
       key: 'page1',
-      title: 'Welcome to MStore!',
-      text: 'Get the hottest fashion by trend and season right on your pocket.',
-      icon: 'ios-basket',
-      colors: ['#0FF0B3', '#036ED9'],
+      title: 'Găsește paleta potrivită pentru tine',
+      text: 'Răspunde la câteva întrebări simple și primești recomandări adaptate stilului tău de joc.',
+      icon: 'butterfly-outline',
+      colors: ['#E63B8C', '#F49BC6'],
     },
     {
       key: 'page2',
-      title: 'Secure Payment',
-      text: 'All your payment infomation is top safety and protected',
-      icon: 'ios-card',
-      colors: ['#13f1fc', '#0470dc'],
+      title: 'Recomandarea perfectă începe aici',
+      text: 'Un scurt chestionar. Rezultate personalizate. Alegerea corectă.',
+      icon: 'options-outline',
+      image: require('@images/onboarding/slide2.png'),
+      colors: ['#E63B8C', '#1A1B3A'],
     },
     {
       key: 'page3',
-      title: 'High Performance',
-      text: 'Saving your value time and buy product with ease',
-      icon: 'ios-finger-print',
-      colors: ['#b1ea4d', '#459522'],
+      title: 'Alegerea potrivită contează',
+      text: 'Descoperă echipamentul care îți susține stilul și obiectivele. Te ghidăm către echipamentul care se potrivește jocului tău.',
+      icon: 'checkmark-done-outline',
+      image: require('@images/onboarding/slide3.png'),
+      colors: ['#E63B8C', '#2A7A8C'],
     },
   ],
 

@@ -2,8 +2,6 @@
 
 import reactotron from 'reactotron-react-native';
 
-import { DEV_ENV } from '@app/Omni';
-
 import _Color from './Color';
 import _Constants from './Constants';
 import _Config from './Config';
@@ -19,6 +17,8 @@ import _Events from './Events';
 import _Device from './Device';
 // import _Theme from './Theme';
 import { ThemeProvider, withTheme, themes } from './Theme';
+
+const DEV_ENV = typeof __DEV__ !== 'undefined' ? __DEV__ : false;
 
 export const Color = _Color;
 export const Constants = _Constants;

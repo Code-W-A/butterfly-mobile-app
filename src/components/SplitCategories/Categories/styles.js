@@ -7,7 +7,7 @@ import { Styles } from '@common';
 export default StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#3FC1BE',
+    backgroundColor: '#E94190',
     width: Styles.width - 120 * 2 - 15 * 3,
   },
 });

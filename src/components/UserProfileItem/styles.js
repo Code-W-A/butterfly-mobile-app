@@ -17,6 +17,14 @@ export default StyleSheet.create({
     fontSize: 16,
     color: '#9B9B9B',
   },
+  leftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  leadingIcon: {
+    marginRight: 10,
+  },
   rightText: textColor => ({
     fontSize: 16,
     color: textColor,

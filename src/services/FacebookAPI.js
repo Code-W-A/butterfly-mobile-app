@@ -1,57 +1,32 @@
 /** @format */
 
-import * as Facebook from 'expo-facebook';
+import { DeviceEventEmitter } from 'react-native';
+import Constants from '@common/Constants';
 
-import { Config } from '@common';
-import { toast, log } from '@app/Omni';
+const toast = (message, duration = 4000) => {
+  DeviceEventEmitter.emit(Constants.EmitCode.Toast, message, duration);
+};
 
 class FacebookAPI {
   async login() {
-    await Facebook.initializeAsync({
-      appId: Config.appFacebookId,
-      appName: 'MStore',
-    });
-
-    const ask = await Facebook.logInWithReadPermissionsAsync({
-      permissions: ['public_profile', 'email'],
-    });
-    const { type } = ask;
-
-    if (type === 'success') {
-      const { token } = ask;
-
-      return token;
-    }
+    toast('Facebook login is currently unavailable.');
     return null;
   }
 
   logout() {
-    Facebook.logOut();
+    // No-op until a maintained Facebook SDK is integrated.
   }
 
   async getAccessToken() {
-    return Facebook.getCurrentFacebook();
+    return null;
   }
 
   async shareLink(link, desc) {
-    const shareLinkContent = {
-      contentType: 'link',
-      contentUrl: link,
-      contentDescription: desc,
-    };
-    try {
-      const canShow = await Facebook.canShow(shareLinkContent);
-      if (canShow) {
-        const result = await Facebook.show(shareLinkContent);
-        if (!result.isCancelled) {
-          toast('Post shared');
-          log(`Share a post with id: ${result.postId}`);
-        }
-      }
-    } catch (error) {
-      toast('An error occurred. Please try again later');
-      error(`Share post fail with error: ${error}`);
+    if (link || desc) {
+      // Keep signature and avoid unused-arg refactors in callers.
     }
+    toast('Facebook sharing is currently unavailable.');
+    return null;
   }
 }
 

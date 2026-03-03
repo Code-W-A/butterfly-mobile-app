@@ -1,24 +1,62 @@
 /** @format */
 
+import 'regenerator-runtime/runtime';
+import './src/shims/reactNativeLegacyPropTypes';
 import React, { useEffect } from 'react';
+import { Dimensions, Platform, View } from 'react-native';
 
 import { Provider } from 'react-redux';
-import { persistStore } from 'redux-persist';
-import { PersistGate } from 'redux-persist/es/integration/react';
 
 import * as Font from 'expo-font';
-import store from '@store/configureStore';
+import store, { initializeStorePersistence } from '@store/configureStore';
+import StateGate from '@store/StateGate';
 import RootRouter from './src/Router';
 import './ReactotronConfig';
+
+const MIN_ANDROID_BOTTOM_INSET = 0;
+
+const getAndroidBottomInset = () => {
+  if (Platform.OS !== 'android') {
+    return 0;
+  }
+
+  const screenHeight = Dimensions.get('screen').height;
+  const windowHeight = Dimensions.get('window').height;
+
+  return Math.max(screenHeight - windowHeight, MIN_ANDROID_BOTTOM_INSET);
+};
 
 function cacheFonts(fonts) {
   return fonts.map(font => Font.loadAsync(font));
 }
 
 export default function App() {
+  const [androidBottomInset, setAndroidBottomInset] = React.useState(
+    getAndroidBottomInset(),
+  );
+
   useEffect(() => {
     loadAssets();
   });
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return undefined;
+    }
+
+    const onDimensionChange = () => {
+      setAndroidBottomInset(getAndroidBottomInset());
+    };
+
+    const dimensionSubscription = Dimensions.addEventListener(
+      'change',
+      onDimensionChange,
+    );
+
+    return () => {
+      dimensionSubscription?.remove?.();
+    };
+  }, []);
 
   const loadAssets = async () => {
     const fontAssets = cacheFonts([
@@ -46,14 +84,17 @@ export default function App() {
 
     await Promise.all([...fontAssets]);
   };
-
-  const persistor = persistStore(store);
-
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <RootRouter />
-      </PersistGate>
+      <StateGate
+        loading={null}
+        store={store}
+        initializePersistence={initializeStorePersistence}
+      >
+        <View style={{ flex: 1, paddingBottom: androidBottomInset }}>
+          <RootRouter />
+        </View>
+      </StateGate>
     </Provider>
   );
 }

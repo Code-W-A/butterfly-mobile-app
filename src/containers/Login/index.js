@@ -6,19 +6,29 @@
 
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
-import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  Platform,
+} from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { connect } from 'react-redux';
-import { WooWorker } from 'api-ecommerce';
-import Reactotron from 'reactotron-react-native';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { has, get, trim } from 'lodash';
+import { trim } from 'lodash';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
-import { Icons, Languages, Styles, Config, withTheme } from '@common';
-import { Icon, toast, warn, FacebookAPI } from '@app/Omni';
+import { Icons, Languages, Styles, Config, Color, withTheme } from '@common';
+import { Icon, toast } from '@app/Omni';
+import { initializeFirebase } from '@services/Firebase';
+import { getFirebaseAuthErrorMessage } from '@services/FirebaseAuthErrorMessages';
+import {
+  ensureFirebaseUserProfile,
+  mapFirebaseUserToAppUser,
+} from '@services/FirebaseUserProfile';
 
 import { ButtonIndex } from '@components';
-import WPUserAPI from '@services/WPUserAPI';
 import styles from './styles';
 
 class LoginScreen extends PureComponent {
@@ -29,6 +39,7 @@ class LoginScreen extends PureComponent {
     onViewCartScreen: PropTypes.func,
     onViewHomeScreen: PropTypes.func,
     onViewSignUp: PropTypes.func,
+    onViewForgotPassword: PropTypes.func,
     logout: PropTypes.func,
     navigation: PropTypes.object,
     onBack: PropTypes.func,
@@ -39,8 +50,9 @@ class LoginScreen extends PureComponent {
     this.state = {
       username: '',
       password: '',
+      showPassword: false,
+      focusedField: '',
       isLoading: false,
-      logInFB: false,
     };
 
     this.onUsernameEditHandle = username => this.setState({ username });
@@ -58,53 +70,50 @@ class LoginScreen extends PureComponent {
     }
   }
 
-  // handle the logout screen and navigate to cart page if the new user login object exist
-  UNSAFE_componentWillReceiveProps(nextProps) {
+  componentDidUpdate(prevProps) {
     const {
       onViewCartScreen,
-      user: oldUser,
+      user,
       onViewHomeScreen,
       route,
     } = this.props;
-
-    const { user } = nextProps.user;
+    const nextUser = user.user;
+    const prevUser = prevProps.user.user;
     const params = route?.params;
 
-    // check case after logout
-    if (user) {
-      if (nextProps.isLogout) {
-        this._handleLogout();
-      } else if (!oldUser.user) {
-        // check case after login
-        this.setState({ isLoading: false });
+    if (nextUser && this.props.isLogout && !prevProps.isLogout) {
+      this._handleLogout();
+      return;
+    }
 
-        if (params && typeof params.onCart !== 'undefined') {
-          onViewCartScreen();
-        } else {
-          onViewHomeScreen();
-        }
-
-        const displayName =
-          has(user, 'last_name') && has(user, 'first_name')
-            ? `${get(user, 'last_name')} ${get(user, 'first_name')}`
-            : get(user, 'name');
-
-        toast(`${Languages.welcomeBack} ${displayName}.`);
-
-        this.props.initAddresses(user);
+    if (nextUser && !prevUser) {
+      // check case after login
+      this.setState({ isLoading: false });
+      if (params && typeof params.onCart !== 'undefined') {
+        onViewCartScreen();
+      } else {
+        onViewHomeScreen();
       }
+      toast(`${Languages.welcomeBack}${nextUser.name}.`);
     }
   }
 
-  _handleLogout = () => {
+  _handleLogout = async () => {
     const { logout, onViewHomeScreen } = this.props;
-    logout();
-    if (this.state.logInFB) {
-      if (FacebookAPI.getAccessToken()) {
-        FacebookAPI.logout();
+    this.setState({ isLoading: true });
+
+    try {
+      const firebaseSetup = initializeFirebase();
+      if (firebaseSetup?.auth) {
+        await signOut(firebaseSetup.auth);
       }
+    } catch (_error) {
+      // Ignore signOut errors and still clear local state.
+    } finally {
+      logout();
+      this.setState({ isLoading: false });
+      onViewHomeScreen();
     }
-    onViewHomeScreen();
   };
 
   _onBack = () => {
@@ -126,62 +135,55 @@ class LoginScreen extends PureComponent {
     this.setState({ isLoading: true });
 
     const { username, password } = this.state;
+    const email = trim(username).toLowerCase();
 
-    // login the customer via Wordpress API and get the access token
-    const json = await WPUserAPI.login(trim(username), password);
-
-    if (!json) {
-      this.stopAndToast(Languages.GetDataError);
-    } else if (json.error || json.message) {
-      this.stopAndToast(json.error || json.message);
-    } else {
-      if (has(json, 'user.id')) {
-        let customers = await WooWorker.getCustomerById(get(json, 'user.id'));
-
-        customers = { ...customers, username, password };
-
-        this.setState({ isLoading: false });
-
-        this._onBack();
-        login(customers, json.cookie);
-
+    try {
+      const firebaseSetup = initializeFirebase();
+      if (!firebaseSetup?.auth) {
+        this.stopAndToast('Firebase Auth nu este configurat.');
         return;
       }
 
-      this.stopAndToast(Languages.CanNotLogin);
-    }
-  };
-
-  onFBLoginPressHandle = () => {
-    const { login } = this.props;
-    this.setState({ isLoading: true });
-    FacebookAPI.login()
-      .then(async token => {
-        if (token) {
-          const json = await WPUserAPI.loginFacebook(token);
-          warn(['json', json]);
-          if (json === undefined) {
-            this.stopAndToast(Languages.GetDataError);
-          } else if (json.error || json.message) {
-            this.stopAndToast(json.error || json.message);
-          } else {
-            let customers = await WooWorker.getCustomerById(json.wp_user_id);
-            customers = { ...customers, token, picture: json.user.picture };
-            this._onBack();
-            login(customers, json.cookie);
-          }
-        } else {
-          this.setState({ isLoading: false });
-        }
-      })
-      .catch(err => {
-        warn(err);
-        this.setState({ isLoading: false });
+      const credential = await signInWithEmailAndPassword(
+        firebaseSetup.auth,
+        email,
+        password,
+      );
+      const profile = await ensureFirebaseUserProfile({
+        firebaseUser: credential.user,
+        profilePatch: { email },
       });
+      const appUser = mapFirebaseUserToAppUser({
+        firebaseUser: credential.user,
+        profile,
+      });
+
+      this.setState({ isLoading: false });
+      this._onBack();
+      login(appUser, credential.user.uid);
+    } catch (error) {
+      this.stopAndToast(getFirebaseAuthErrorMessage(error, Languages.CanNotLogin));
+    }
   };
 
   onSignUpHandle = () => {
     this.props.onViewSignUp();
+  };
+
+  onTogglePasswordVisibility = () => {
+    this.setState(prevState => ({ showPassword: !prevState.showPassword }));
+  };
+
+  onFocusField = focusedField => {
+    this.setState({ focusedField });
+  };
+
+  onBlurField = () => {
+    this.setState({ focusedField: '' });
+  };
+
+  onForgotPasswordHandle = () => {
+    this.props.onViewForgotPassword();
   };
 
   checkConnection = () => {
@@ -200,7 +202,8 @@ class LoginScreen extends PureComponent {
   }
 
   render() {
-    const { username, password, isLoading } = this.state;
+    const { username, password, isLoading, showPassword, focusedField } =
+      this.state;
     const {
       theme: {
         colors: { background, text, placeholder },
@@ -209,9 +212,14 @@ class LoginScreen extends PureComponent {
 
     return (
       <KeyboardAwareScrollView
-        enableOnAndroid={false}
+        enableOnAndroid
+        enableAutomaticScroll
+        keyboardOpeningTime={0}
+        keyboardShouldPersistTaps="handled"
+        extraHeight={Platform.OS === 'android' ? 120 : 80}
+        extraScrollHeight={Platform.OS === 'android' ? 24 : 12}
         style={{ backgroundColor: background }}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { flexGrow: 1 }]}
       >
         <View style={styles.logoWrap}>
           <Image
@@ -221,45 +229,70 @@ class LoginScreen extends PureComponent {
           />
         </View>
         <View style={styles.subContain}>
+          <View style={styles.headerWrap}>
+            <Text style={[styles.title, { color: text }]}>{Languages.Login}</Text>
+            <Text style={[styles.subtitle, { color: text }]}>
+              Continua in contul tau Butterfly.
+            </Text>
+          </View>
           <View style={styles.loginForm}>
-            <View style={styles.inputWrap}>
-              <Icon
-                name={Icons.MaterialCommunityIcons.Email}
-                size={Styles.IconSize.TextInput}
-                color={text}
-              />
-              <TextInput
-                style={styles.input(text)}
-                underlineColorAndroid="transparent"
-                placeholderTextColor={placeholder}
-                ref={comp => (this.username = comp)}
-                placeholder={Languages.UserOrEmail}
-                keyboardType="email-address"
-                onChangeText={this.onUsernameEditHandle}
-                onSubmitEditing={this.focusPassword}
-                returnKeyType="next"
-                value={username}
-                editable={!isLoading}
-              />
-            </View>
-            <View style={styles.inputWrap}>
-              <Icon
-                name={Icons.MaterialCommunityIcons.Lock}
-                size={Styles.IconSize.TextInput}
-                color={text}
-              />
-              <TextInput
-                style={styles.input(text)}
-                underlineColorAndroid="transparent"
-                placeholderTextColor={placeholder}
-                ref={comp => (this.password = comp)}
-                placeholder={Languages.password}
-                onChangeText={this.onPasswordEditHandle}
-                secureTextEntry
-                returnKeyType="go"
-                value={password}
-                editable={!isLoading}
-              />
+            <View style={styles.formCard}>
+              <View style={styles.inputWrap(focusedField === 'username')}>
+                <Icon
+                  name={Icons.MaterialCommunityIcons.Email}
+                  size={Styles.IconSize.TextInput}
+                  color={focusedField === 'username' ? Color.primary : text}
+                />
+                <TextInput
+                  style={styles.input(text)}
+                  underlineColorAndroid="transparent"
+                  placeholderTextColor={placeholder}
+                  ref={comp => (this.username = comp)}
+                  placeholder={Languages.Email}
+                  keyboardType="email-address"
+                  onChangeText={this.onUsernameEditHandle}
+                  onSubmitEditing={this.focusPassword}
+                  returnKeyType="next"
+                  value={username}
+                  editable={!isLoading}
+                  autoCapitalize="none"
+                  onFocus={() => this.onFocusField('username')}
+                  onBlur={this.onBlurField}
+                />
+              </View>
+              <View style={styles.inputWrap(focusedField === 'password')}>
+                <Icon
+                  name={Icons.MaterialCommunityIcons.Lock}
+                  size={Styles.IconSize.TextInput}
+                  color={focusedField === 'password' ? Color.primary : text}
+                />
+                <TextInput
+                  style={styles.input(text)}
+                  underlineColorAndroid="transparent"
+                  placeholderTextColor={placeholder}
+                  ref={comp => (this.password = comp)}
+                  placeholder={Languages.password}
+                  onChangeText={this.onPasswordEditHandle}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="go"
+                  value={password}
+                  editable={!isLoading}
+                  onFocus={() => this.onFocusField('password')}
+                  onBlur={this.onBlurField}
+                />
+                <TouchableOpacity
+                  disabled={isLoading}
+                  onPress={this.onTogglePasswordVisibility}
+                  style={styles.passwordEyeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={20}
+                    color={showPassword ? Color.primary : text}
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
             <ButtonIndex
               text={Languages.Login.toUpperCase()}
@@ -268,67 +301,13 @@ class LoginScreen extends PureComponent {
               disabled={isLoading}
               loading={isLoading}
             />
+            <TouchableOpacity onPress={this.onForgotPasswordHandle}>
+              <Text style={styles.forgotPasswordText}>
+                {Languages.forgotPassword}
+              </Text>
+            </TouchableOpacity>
+
           </View>
-          <View style={styles.separatorWrap}>
-            <View style={styles.separator(text)} />
-            <Text style={styles.separatorText(text)}>{Languages.Or}</Text>
-            <View style={styles.separator(text)} />
-          </View>
-
-          <ButtonIndex
-            text={Languages.FacebookLogin.toUpperCase()}
-            icon={Icons.MaterialCommunityIcons.Facebook}
-            containerStyle={styles.fbButton}
-            onPress={this.onFBLoginPressHandle}
-            disabled={isLoading}
-          />
-
-          {/* <ButtonIndex
-            text={Languages.SMSLogin.toUpperCase()}
-            icon={Icons.MaterialCommunityIcons.SMS}
-            containerStyle={styles.smsButton}
-            onPress={() => {
-              this.setModalVisible('modalVisible', true);
-              // this.textPhoneNumber.focus();
-            }}
-          /> */}
-
-          {/* {SignInWithAppleButton(styles.appleBtn, this.appleSignIn)} */}
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={
-              AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-            }
-            buttonStyle={
-              AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
-            }
-            cornerRadius={5}
-            style={[styles.appleBtn, { marginVertical: 5 }]}
-            onPress={async () => {
-              if (isLoading) {
-                return;
-              }
-
-              try {
-                Reactotron.log('credential');
-                const credential = await AppleAuthentication.signInAsync({
-                  requestedScopes: [
-                    AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                    AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                  ],
-                });
-                // signed in
-                this.appleSignIn(credential);
-              } catch (e) {
-                if (e.code === 'ERR_CANCELED') {
-                  // handle that the user canceled the sign-in flow
-                  // Reactotron.log('credential', e);
-                } else {
-                  // handle other errors
-                  // Reactotron.log('credential', e);
-                }
-              }
-            }}
-          />
 
           <TouchableOpacity
             style={Styles.Common.ColumnCenter}
@@ -343,30 +322,6 @@ class LoginScreen extends PureComponent {
       </KeyboardAwareScrollView>
     );
   }
-
-  appleSignIn = async result => {
-    const { login } = this.props;
-    if (result.email) {
-      this.setState({ isLoading: true });
-      const fullName = `${result.fullName.givenName} ${result.fullName.familyName}`;
-      const json = await WPUserAPI.appleLogin(
-        result.email,
-        fullName,
-        result.email.split('@')[0],
-      );
-      if (json === undefined) {
-        this.stopAndToast(Languages.GetDataError);
-      } else if (json.error) {
-        this.stopAndToast(json.error);
-      } else {
-        const customers = await WooWorker.getCustomerById(json.wp_user_id);
-        this._onBack();
-        login(customers, json.cookie);
-      }
-    } else {
-      alert("Can't get email");
-    }
-  };
 }
 
 LoginScreen.propTypes = {
@@ -379,14 +334,10 @@ const mapStateToProps = ({ netInfo, user }) => ({ netInfo, user });
 
 const mapDispatchToProps = dispatch => {
   const { actions } = require('@redux/UserRedux');
-  const AddressRedux = require('@redux/AddressRedux');
 
   return {
     login: (user, token) => dispatch(actions.login(user, token)),
     logout: () => dispatch(actions.logout()),
-    initAddresses: customerInfo => {
-      AddressRedux.actions.initAddresses(dispatch, customerInfo);
-    },
   };
 };
 

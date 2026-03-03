@@ -1,15 +1,6 @@
 /** @format */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import {
-  getReactNativePersistence,
-  initializeAuth,
-} from 'firebase/auth/react-native';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
 
 const REQUIRED_FIREBASE_KEYS = [
   'apiKey',
@@ -57,6 +48,34 @@ export let firebaseAuth = null;
 export let firebaseDb = null;
 export let firebaseStorage = null;
 
+const loadFirebaseModules = () => {
+  // Load Firebase lazily to avoid pulling browser-only code paths during app
+  // startup when Firebase config is missing.
+  const AsyncStorage =
+    require('@react-native-async-storage/async-storage').default;
+  const { getApp, getApps, initializeApp } = require('firebase/app');
+  const { getAuth } = require('firebase/auth');
+  const {
+    getReactNativePersistence,
+    initializeAuth,
+  } = require('firebase/auth/react-native');
+  const { getFirestore, initializeFirestore } = require('firebase/firestore');
+  const { getStorage } = require('firebase/storage');
+
+  return {
+    AsyncStorage,
+    getApp,
+    getApps,
+    initializeApp,
+    getAuth,
+    getReactNativePersistence,
+    initializeAuth,
+    getFirestore,
+    initializeFirestore,
+    getStorage,
+  };
+};
+
 export const initializeFirebase = () => {
   if (!isFirebaseConfigured) {
     return {
@@ -83,6 +102,19 @@ export const initializeFirebase = () => {
   }
 
   try {
+    const {
+      AsyncStorage,
+      getApp,
+      getApps,
+      initializeApp,
+      getAuth,
+      getReactNativePersistence,
+      initializeAuth,
+      getFirestore,
+      initializeFirestore,
+      getStorage,
+    } = loadFirebaseModules();
+
     firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
     try {
@@ -93,7 +125,16 @@ export const initializeFirebase = () => {
       firebaseAuth = getAuth(firebaseApp);
     }
 
-    firebaseDb = getFirestore(firebaseApp);
+    try {
+      // RN + Firebase JS SDK can hit gRPC transport issues on some networks.
+      // Force long polling for better compatibility on Android/dev builds.
+      firebaseDb = initializeFirestore(firebaseApp, {
+        experimentalForceLongPolling: true,
+        useFetchStreams: false,
+      });
+    } catch (_error) {
+      firebaseDb = getFirestore(firebaseApp);
+    }
     firebaseStorage = getStorage(firebaseApp);
 
     return {

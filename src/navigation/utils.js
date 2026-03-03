@@ -58,7 +58,7 @@ export const getNavigationOptions = ({ route, navigation, theme }) => {
 
     case ROUTER.USER_PROFILE: {
       navigationOptions = {
-        headerLeft: props => <Menu {...props} dark={theme.dark} />,
+        headerLeft: props => <EmptyView {...props} />,
 
         title: Languages.UserProfile,
         headerTintColor: Color.headerTintColor,
@@ -124,6 +124,19 @@ export const getNavigationOptions = ({ route, navigation, theme }) => {
         headerRight: props => <EmptyView {...props} />,
 
         title: Languages.signup,
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.FORGOT_PASSWORD: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        headerRight: props => <EmptyView {...props} />,
+        title: Languages.resetPassword,
         headerTintColor: Color.headerTintColor,
       };
 
@@ -236,6 +249,66 @@ export const getNavigationOptions = ({ route, navigation, theme }) => {
         ),
 
         title: Languages.Settings,
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.EDIT_PROFILE: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        title: 'Editeaza profilul',
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.PRIVACY_POLICY: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        title: 'Politica de confidentialitate',
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.TERMS_AND_CONDITIONS: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        title: 'Termeni si conditii',
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.RECOMMENDATION_HISTORY: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        title: 'Istoric',
+        headerTintColor: Color.headerTintColor,
+      };
+
+      break;
+    }
+
+    case ROUTER.RECOMMENDATION_FAVORITES: {
+      navigationOptions = {
+        headerLeft: props => (
+          <Back {...props} navigation={navigation} dark={theme.dark} />
+        ),
+        title: 'Favorite',
         headerTintColor: Color.headerTintColor,
       };
 

@@ -8,7 +8,6 @@ import _IconIO from '@expo/vector-icons/Ionicons';
 import _Timer from 'react-timer-mixin';
 import ExpoConst from 'expo-constants';
 
-import store from '@store/configureStore';
 import { Images, Constants, Config } from '@common';
 import _Validate from './utils/Validate';
 import _BlockTimer from './utils/BlockTimer';
@@ -39,6 +38,21 @@ export const log = _log;
 export const warn = _warn;
 export const error = _error;
 
+let cachedStore = null;
+const getStore = () => {
+  if (cachedStore) {
+    return cachedStore;
+  }
+
+  try {
+    cachedStore = require('@store/configureStore').default;
+  } catch (_storeError) {
+    cachedStore = null;
+  }
+
+  return cachedStore;
+};
+
 /**
  * An async fetch with error catch
  * @param url
@@ -60,17 +74,17 @@ export const request = async (url, data = {}) => {
 // Drawer
 export const openDrawer = () =>
   // EventEmitter.emit(Constants.EmitCode.SideMenuOpen)
-  store.dispatch({
+  getStore()?.dispatch?.({
     type: Constants.EmitCode.SideMenuOpen,
   });
 export const closeDrawer = () =>
   // EventEmitter.emit(Constants.EmitCode.SideMenuClose)
-  store.dispatch({
+  getStore()?.dispatch?.({
     type: Constants.EmitCode.SideMenuClose,
   });
 export const toggleDrawer = () =>
   // EventEmitter.emit(Constants.EmitCode.SideMenuClose)
-  store.dispatch({
+  getStore()?.dispatch?.({
     type: Constants.EmitCode.SideMenuToggle,
   });
 

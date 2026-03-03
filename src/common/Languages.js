@@ -73,7 +73,7 @@ export default {
   ConfirmOrder: 'Confirm Order',
   RequireEnterAllFileds: 'Please enter all fields',
   Error: 'Error',
-  InvalidEmail: 'Invalid email address',
+  InvalidEmail: 'Adresa de email este invalida',
   Finish: 'Finish',
 
   // Wishlist
@@ -93,8 +93,8 @@ export default {
   NoEmailError: "Your account don't have valid email address",
   EmailIsNotVerifiedError:
     "Your email address is not verified, we can' trust you",
-  Login: 'Login',
-  Logout: 'Logout',
+  Login: 'Autentificare',
+  Logout: 'Deconectare',
   Shop: 'Shop',
   Category: 'Category',
 
@@ -204,7 +204,7 @@ export default {
   // filter panel
   Categories: 'Categories',
   Loading: 'LOADING...',
-  welcomeBack: 'Welcome back! ',
+  welcomeBack: 'Bine ai revenit, ',
   seeAll: 'Show All',
 
   // Layout
@@ -239,31 +239,58 @@ export default {
   TypeCountry: 'Select country',
   SelectPayment: 'Select Payment method',
   close: 'CLOSE',
-  noConnection: 'NO INTERNET ACCESS',
+  noConnection: 'NU EXISTA CONEXIUNE LA INTERNET',
 
   // user profile screen
-  AccountInformations: 'Account Informations',
+  AccountInformations: 'Informatii cont',
   PushNotification: 'Push notification',
   DarkTheme: 'Dark Theme',
   Privacy: 'Privacy policy',
   SelectCurrency: 'Select currency',
-  Name: 'Name',
+  Name: 'Nume',
   Currency: 'Currency',
   Languages: 'Languages',
   Guest: 'Guest',
-  FacebookLogin: 'Facebook Login',
+  FacebookLogin: 'Autentificare Facebook',
   Or: 'Or',
-  UserOrEmail: 'Username or Email',
-  DontHaveAccount: "Don't have account? ",
-  accountDetails: 'Account Details',
-  username: 'Username',
+  UserOrEmail: 'Utilizator sau email',
+  DontHaveAccount: 'Nu ai cont? ',
+  accountDetails: 'Detalii cont',
+  username: 'Nume utilizator',
   email: 'Email',
-  generatePass: 'Use generate password',
-  password: 'Password',
-  signup: 'Sign Up',
-  profileDetail: 'Profile Details',
-  firstName: 'First name',
-  lastName: 'Last name',
+  generatePass: 'Genereaza parola automat',
+  password: 'Parola',
+  signup: 'Creeaza cont',
+  profileDetail: 'Date profil',
+  DeleteAccount: 'Stergere cont',
+  DeleteAccountTitle: 'Stergere cont',
+  DeleteAccountMessage:
+    'Aceasta actiune este ireversibila. Contul si datele tale vor fi sterse definitiv.',
+  DeleteAccountConfirmTitle: 'Confirmare finala',
+  DeleteAccountConfirmMessage:
+    'Sigur vrei sa stergi definitiv contul? Nu vei mai putea recupera datele.',
+  DeleteAccountCancel: 'Anuleaza',
+  DeleteAccountContinue: 'Continua',
+  DeleteAccountConfirm: 'Sterge definitiv',
+  DeleteAccountInProgress: 'Stergem contul...',
+  DeleteAccountSuccess: 'Contul a fost sters cu succes.',
+  DeleteAccountReauthRequired:
+    'Pentru securitate, autentifica-te din nou si incearca stergerea contului.',
+  DeleteAccountNoUser: 'Nu exista un utilizator autentificat.',
+  DeleteAccountGenericError:
+    'Nu am putut sterge contul acum. Incearca din nou.',
+  firstName: 'Prenume',
+  lastName: 'Nume',
+  forgotPassword: 'Ai uitat parola?',
+  resetPassword: 'Recuperare parola',
+  resetPasswordHint:
+    'Introdu adresa de email asociata contului pentru a primi link-ul de resetare.',
+  sendResetLink: 'Trimite link de resetare',
+  backToLogin: 'Inapoi la autentificare',
+  resetPasswordSuccess:
+    'Am trimis emailul de resetare a parolei. Verifica inbox-ul.',
+  confirmPassword: 'Confirma parola',
+  passwordsDoNotMatch: 'Parolele nu coincid.',
 
   // Horizontal
   featureProducts: 'Feature Products',
@@ -302,11 +329,12 @@ export default {
   AddToAddress: 'Add to Address',
   OrderNotes: 'Order Notes',
 
-  CanNotLogin: 'Can not login, something was wrong!',
-  PleaseCompleteForm: 'Please complete the form!',
-  ServerNotResponse: "Server doesn't response correctly",
-  CanNotRegister: "Can't register user, please try again.",
+  CanNotLogin: 'Nu te-am putut autentifica. Verifica datele si incearca din nou.',
+  PleaseCompleteForm: 'Te rugam sa completezi toate campurile!',
+  ServerNotResponse:
+    'Serverul nu a raspuns corect. Te rugam sa incerci din nou.',
+  CanNotRegister: 'Nu am putut crea contul. Te rugam incearca din nou.',
 
-  UserProfile: 'User Profile',
+  UserProfile: 'Profil utilizator',
   LoadMore: 'Load More',
 };

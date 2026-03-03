@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { Dimensions } from 'react-native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { Color, Images, Config, withTheme } from '@common';
+import { Icon } from '@app/Omni';
 import { TabBar, TabBarIcon, TabBarIconHome } from '@components';
 
 import HomeScreen from './HomeScreen';
@@ -19,6 +20,7 @@ import WishListScreen from './WishListScreen';
 import SearchScreen from './SearchScreen';
 import LoginScreen from './LoginScreen';
 import SignUpScreen from './SignUpScreen';
+import ForgotPasswordScreen from './ForgotPasswordScreen';
 import CustomPageScreen from './CustomPageScreen';
 import ListAllScreen from './ListAllScreen';
 import SettingScreen from './SettingScreen';
@@ -26,13 +28,22 @@ import UserProfileScreen from './UserProfileScreen';
 import FiltersScreen from './FiltersScreen';
 import AddressScreen from './AddressScreen';
 import AddAddressScreen from './AddAddressScreen';
+import EditProfileScreen from './EditProfileScreen';
+import ChangeEmailScreen from './ChangeEmailScreen';
+import ChangePasswordScreen from './ChangePasswordScreen';
+import PrivacyPolicyScreen from './PrivacyPolicyScreen';
+import TermsAndConditionsScreen from './TermsAndConditionsScreen';
+import RecommendationHistoryLibraryScreen from './RecommendationHistoryLibraryScreen';
+import RecommendationFavoritesLibraryScreen from './RecommendationFavoritesLibraryScreen';
+import RecommendationNavigator from '../features/recommendations/navigation/RecommendationNavigator';
+import { RECOMMENDATION_ROUTES } from '../features/recommendations/navigation/routes';
+import RecommendationDetailScreen from '../features/recommendations/screens/RecommendationDetailScreen';
+import RecommendationImageViewerModal from '../features/recommendations/screens/RecommendationImageViewerModal';
 
 // import TransitionConfig from "./TransitionConfig";
 import { getNavigationOptions } from './utils';
 
 import { ROUTER } from './constants';
-
-const { width } = Dimensions.get('window');
 
 const CategoryNavigator = createStackNavigator();
 
@@ -152,125 +163,275 @@ const MyOrderStack = withTheme(({ theme }) => {
   );
 });
 
+const RecommendationHistoryNavigator = createStackNavigator();
+const RECOMMENDATION_HISTORY_STACK_ROOT = `${ROUTER.RECOMMENDATION_HISTORY}_ROOT`;
+
+const RecommendationHistoryStack = withTheme(({ theme }) => {
+  return (
+    <RecommendationHistoryNavigator.Navigator>
+      <RecommendationHistoryNavigator.Screen
+        name={RECOMMENDATION_HISTORY_STACK_ROOT}
+        component={RecommendationHistoryLibraryScreen}
+        options={props => {
+          return getNavigationOptions({
+            ...props,
+            route: { ...props.route, name: ROUTER.RECOMMENDATION_HISTORY },
+            theme,
+          });
+        }}
+      />
+    </RecommendationHistoryNavigator.Navigator>
+  );
+});
+
+const RecommendationFavoritesNavigator = createStackNavigator();
+const RECOMMENDATION_FAVORITES_STACK_ROOT = `${ROUTER.RECOMMENDATION_FAVORITES}_ROOT`;
+
+const RecommendationFavoritesStack = withTheme(({ theme }) => {
+  return (
+    <RecommendationFavoritesNavigator.Navigator>
+      <RecommendationFavoritesNavigator.Screen
+        name={RECOMMENDATION_FAVORITES_STACK_ROOT}
+        component={RecommendationFavoritesLibraryScreen}
+        options={props => {
+          return getNavigationOptions({
+            ...props,
+            route: { ...props.route, name: ROUTER.RECOMMENDATION_FAVORITES },
+            theme,
+          });
+        }}
+      />
+      <RecommendationFavoritesNavigator.Screen
+        name={RECOMMENDATION_ROUTES.DETAIL}
+        component={RecommendationDetailScreen}
+        options={{
+          headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+        }}
+      />
+      <RecommendationFavoritesNavigator.Screen
+        name={RECOMMENDATION_ROUTES.IMAGE_VIEWER}
+        component={RecommendationImageViewerModal}
+        options={{
+          headerShown: false,
+          ...TransitionPresets.ModalPresentationIOS,
+        }}
+      />
+    </RecommendationFavoritesNavigator.Navigator>
+  );
+});
+
 const MainBottomTab = createBottomTabNavigator();
 
 const MainNavigator = () => {
+  const recommendationOnlyMode = Boolean(
+    Config.Features?.recommendationOnlyMode,
+  );
+  const initialTabRouteName = recommendationOnlyMode
+    ? ROUTER.RECOMMENDATION_STACK
+    : ROUTER.HOME_STACK;
+
   return (
     <MainBottomTab.Navigator
+      initialRouteName={initialTabRouteName}
       tabBar={props => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarShowIcon: true,
-        tabBarShowLabel: true,
+        tabBarShowLabel: !recommendationOnlyMode,
         tabBarActiveTintColor: Color.tabbarTint,
         tabBarInactiveTintColor: Color.tabbarColor,
         lazy: true,
       }}
     >
-      <MainBottomTab.Screen
-        name={ROUTER.HOME_STACK}
-        component={HomeStack}
-        options={({ navigation }) => {
-          return {
-            tabBarIcon: ({ tintColor }) => {
-              return (
-                <TabBarIconHome
-                  onPress={() => {
-                    navigation.navigate('Home');
-                  }}
-                  icon={Images.IconHome}
+      {recommendationOnlyMode ? (
+        <>
+          <MainBottomTab.Screen
+            name={ROUTER.RECOMMENDATION_STACK}
+            component={RecommendationNavigator}
+            listeners={({ navigation }) => ({
+              tabPress: event => {
+                // Reselecting Home in recommendation mode should always return to auth.
+                event.preventDefault();
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: ROUTER.RECOMMENDATION_STACK,
+                      state: {
+                        index: 0,
+                        routes: [{ name: RECOMMENDATION_ROUTES.AUTH }],
+                      },
+                    },
+                  ],
+                });
+              },
+            })}
+            options={({ route }) => {
+              const focusedRouteName =
+                getFocusedRouteNameFromRoute(route) || RECOMMENDATION_ROUTES.AUTH;
+              const shouldHideTabBar =
+                focusedRouteName === RECOMMENDATION_ROUTES.QUESTIONNAIRE ||
+                focusedRouteName === RECOMMENDATION_ROUTES.MICRO_LOADING;
+
+              return {
+                tabBarIcon: ({ tintColor }) => (
+                  <TabBarIcon
+                    css={{ width: 28, height: 28 }}
+                    icon={Images.IconHome}
+                    tintColor={tintColor}
+                  />
+                ),
+                tabBarStyle: shouldHideTabBar ? { display: 'none' } : undefined,
+              };
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.RECOMMENDATION_HISTORY}
+            component={RecommendationHistoryStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <Icon name="history" size={30} color={tintColor} />
+              ),
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.RECOMMENDATION_FAVORITES}
+            component={RecommendationFavoritesStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  wishlistIcon
+                  css={{ width: 28, height: 28 }}
+                  icon={Images.IconHeart}
                   tintColor={tintColor}
                 />
-              );
-            },
-          };
-        }}
-      />
-      <MainBottomTab.Screen
-        name={ROUTER.CATEGORY_STACK}
-        component={CategoryStack}
-        options={{
-          tabBarIcon: ({ tintColor }) => (
-            <TabBarIcon
-              css={{ width: 18, height: 18 }}
-              icon={Images.IconCategory}
-              tintColor={tintColor}
+              ),
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.USER_PROFILE_STACK}
+            component={UserProfileStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  wishlistIcon
+                  css={{ width: 28, height: 28 }}
+                  icon={Images.IconUser}
+                  tintColor={tintColor}
+                />
+              ),
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <MainBottomTab.Screen
+            name={ROUTER.HOME_STACK}
+            component={HomeStack}
+            options={({ navigation }) => {
+              return {
+                tabBarIcon: ({ tintColor }) => {
+                  return (
+                    <TabBarIconHome
+                      onPress={() => {
+                        navigation.navigate('Home');
+                      }}
+                      icon={Images.IconHome}
+                      tintColor={tintColor}
+                    />
+                  );
+                },
+              };
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.CATEGORY_STACK}
+            component={CategoryStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  css={{ width: 18, height: 18 }}
+                  icon={Images.IconCategory}
+                  tintColor={tintColor}
+                />
+              ),
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.SEARCH_STACK}
+            component={SearchStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  css={{ width: 18, height: 18 }}
+                  icon={Images.IconSearch}
+                  tintColor={tintColor}
+                />
+              ),
+            }}
+          />
+          {!Config.Affiliate.enable && (
+            <MainBottomTab.Screen
+              name={ROUTER.CART_STACK}
+              component={CartScreenStack}
+              options={{
+                tabBarIcon: ({ tintColor }) => (
+                  <TabBarIcon
+                    cartIcon
+                    css={{ width: 20, height: 20 }}
+                    icon={Images.IconCart}
+                    tintColor={tintColor}
+                  />
+                ),
+              }}
             />
-          ),
-        }}
-      />
-      <MainBottomTab.Screen
-        name={ROUTER.SEARCH_STACK}
-        component={SearchStack}
-        options={{
-          tabBarIcon: ({ tintColor }) => (
-            <TabBarIcon
-              css={{ width: 18, height: 18 }}
-              icon={Images.IconSearch}
-              tintColor={tintColor}
+          )}
+          <MainBottomTab.Screen
+            name={ROUTER.WISHLIST_STACK}
+            component={WishListStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  wishlistIcon
+                  css={{ width: 18, height: 18 }}
+                  icon={Images.IconHeart}
+                  tintColor={tintColor}
+                />
+              ),
+            }}
+          />
+          <MainBottomTab.Screen
+            name={ROUTER.USER_PROFILE_STACK}
+            component={UserProfileStack}
+            options={{
+              tabBarIcon: ({ tintColor }) => (
+                <TabBarIcon
+                  wishlistIcon
+                  css={{ width: 18, height: 18 }}
+                  icon={Images.IconUser}
+                  tintColor={tintColor}
+                />
+              ),
+            }}
+          />
+          {!Config.Affiliate.enable && (
+            <MainBottomTab.Screen
+              name={ROUTER.MY_ORDERS_STACK}
+              component={MyOrderStack}
+              options={{
+                tabBarIcon: ({ tintColor }) => (
+                  <TabBarIcon
+                    orderIcon
+                    css={{ width: 18, height: 18 }}
+                    icon={Images.IconOrder}
+                    tintColor={tintColor}
+                  />
+                ),
+              }}
             />
-          ),
-        }}
-      />
-      {!Config.Affiliate.enable && (
-        <MainBottomTab.Screen
-          name={ROUTER.CART_STACK}
-          component={CartScreenStack}
-          options={{
-            tabBarIcon: ({ tintColor }) => (
-              <TabBarIcon
-                cartIcon
-                css={{ width: 20, height: 20 }}
-                icon={Images.IconCart}
-                tintColor={tintColor}
-              />
-            ),
-          }}
-        />
-      )}
-      <MainBottomTab.Screen
-        name={ROUTER.WISHLIST_STACK}
-        component={WishListStack}
-        options={{
-          tabBarIcon: ({ tintColor }) => (
-            <TabBarIcon
-              wishlistIcon
-              css={{ width: 18, height: 18 }}
-              icon={Images.IconHeart}
-              tintColor={tintColor}
-            />
-          ),
-        }}
-      />
-      <MainBottomTab.Screen
-        name={ROUTER.USER_PROFILE_STACK}
-        component={UserProfileStack}
-        options={{
-          tabBarIcon: ({ tintColor }) => (
-            <TabBarIcon
-              wishlistIcon
-              css={{ width: 18, height: 18 }}
-              icon={Images.IconUser}
-              tintColor={tintColor}
-            />
-          ),
-        }}
-      />
-      {!Config.Affiliate.enable && (
-        <MainBottomTab.Screen
-          name={ROUTER.MY_ORDERS_STACK}
-          component={MyOrderStack}
-          options={{
-            tabBarIcon: ({ tintColor }) => (
-              <TabBarIcon
-                orderIcon
-                css={{ width: 18, height: 18 }}
-                icon={Images.IconOrder}
-                tintColor={tintColor}
-              />
-            ),
-          }}
-        />
+          )}
+        </>
       )}
     </MainBottomTab.Navigator>
   );
@@ -295,9 +456,17 @@ const AppStack = createStackNavigator();
 
 const AppNavigator = parentProps => {
   const { theme, ...rest } = parentProps;
+  const initialRouteName = ROUTER.ROOT;
 
   return (
-    <AppStack.Navigator {...rest}>
+    <AppStack.Navigator {...rest} initialRouteName={initialRouteName}>
+      <AppStack.Screen
+        name={ROUTER.RECOMMENDATION_ROOT}
+        component={RecommendationNavigator}
+        options={{
+          headerShown: false,
+        }}
+      />
       <AppStack.Screen
         name={ROUTER.ROOT}
         component={RootNavigator}
@@ -332,6 +501,13 @@ const AppNavigator = parentProps => {
       <AppStack.Screen
         name={ROUTER.SIGN_UP}
         component={SignUpScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.FORGOT_PASSWORD}
+        component={ForgotPasswordScreen}
         options={props => {
           return getNavigationOptions({ ...props, theme });
         }}
@@ -385,6 +561,55 @@ const AppNavigator = parentProps => {
       <AppStack.Screen
         name={ROUTER.SETTINGS}
         component={SettingScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.EDIT_PROFILE}
+        component={EditProfileScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.CHANGE_EMAIL}
+        component={ChangeEmailScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.CHANGE_PASSWORD}
+        component={ChangePasswordScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.PRIVACY_POLICY}
+        component={PrivacyPolicyScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.TERMS_AND_CONDITIONS}
+        component={TermsAndConditionsScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.RECOMMENDATION_HISTORY}
+        component={RecommendationHistoryLibraryScreen}
+        options={props => {
+          return getNavigationOptions({ ...props, theme });
+        }}
+      />
+      <AppStack.Screen
+        name={ROUTER.RECOMMENDATION_FAVORITES}
+        component={RecommendationFavoritesLibraryScreen}
         options={props => {
           return getNavigationOptions({ ...props, theme });
         }}

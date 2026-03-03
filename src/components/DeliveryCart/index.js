@@ -26,7 +26,7 @@ const Input = props => {
       <TouchableOpacity
         style={[
           styles.content,
-          props.selected && { backgroundColor: '#0091ea' },
+          props.selected && { backgroundColor: '#E94190' },
         ]}
         onPress={props.onPress}
         activeOpacity={0.8}
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   content: {
     width: 95,
     borderWidth: 1,
-    borderColor: '#9ddaff',
+    borderColor: '#E94190',
     borderRadius: 12,
   },
   selected: {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   money: {
-    color: '#0091ea',
+    color: '#E94190',
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   type: {
-    color: '#0091ea',
+    color: '#E94190',
     fontSize: 15,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   time: {
-    color: '#0091ea',
+    color: '#E94190',
     fontSize: 13,
     textAlign: 'center',
     marginLeft: 5,

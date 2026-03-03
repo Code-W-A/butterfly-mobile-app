@@ -1,6 +1,10 @@
 /** @format */
 
-import { warn } from './../Omni';
+const warn = (...args) => {
+  if (typeof console?.warn === 'function') {
+    console.warn(...args);
+  }
+};
 
 const CountryWorker = {
   getAllCountries: async () => {

@@ -1,7 +1,6 @@
 /** @format */
 
-import { persistCombineReducers } from 'redux-persist';
-import storage from 'redux-persist/es/storage';
+import combineReducers from '@store/combineReducers';
 
 // You have to import every reducers and combine them.
 import { reducer as AppReducer } from './AppRedux';
@@ -24,21 +23,17 @@ import { reducer as AddressRedux } from './AddressRedux';
 import { reducer as BrandsRedux } from './BrandsRedux';
 import { reducer as FilterRedux } from './FilterRedux';
 
-const config = {
-  key: 'root',
-  storage,
-  blacklist: [
-    'netInfo',
-    'toast',
-    'nav',
-    'layouts',
-    'payment',
-    'sideMenu',
-    'filters',
-  ],
-};
+export const PERSIST_BLACKLIST = [
+  'netInfo',
+  'toast',
+  'nav',
+  'layouts',
+  'payment',
+  'sideMenu',
+  'filters',
+];
 
-export default persistCombineReducers(config, {
+const rootReducer = combineReducers({
   app: AppReducer,
   categories: CategoryReducer,
   products: ProductRedux,
@@ -59,3 +54,5 @@ export default persistCombineReducers(config, {
   brands: BrandsRedux,
   filters: FilterRedux,
 });
+
+export default rootReducer;

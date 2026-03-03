@@ -1,14 +1,33 @@
 /** @format */
 
 import React, { Component } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { SafeAreaView } from '@components';
+import { Color, Styles } from '@common';
 import { ProductList } from '@components';
 
-// eslint-disable-next-line react/prefer-stateless-function
 class ListAllScreen extends Component {
   render() {
     const { route, navigation } = this.props;
-    const params = route.params;
+    const params = route?.params;
+
+    if (
+      !params ||
+      !params.config ||
+      typeof params.index === 'undefined' ||
+      params.index === null
+    ) {
+      return (
+        <SafeAreaView>
+          <View style={styles.fallbackWrap}>
+            <Text style={styles.fallbackText}>
+              Ecranul are nevoie de context de colecție.
+            </Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
 
     return (
       <ProductList
@@ -26,5 +45,19 @@ class ListAllScreen extends Component {
     );
   }
 }
+
+const styles = StyleSheet.create({
+  fallbackWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  fallbackText: {
+    fontSize: Styles.FontSize.small,
+    color: Color.blackTextSecondary,
+    textAlign: 'center',
+  },
+});
 
 export default ListAllScreen;

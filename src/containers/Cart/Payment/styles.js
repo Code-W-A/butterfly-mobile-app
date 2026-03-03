@@ -64,7 +64,7 @@ export default StyleSheet.create({
   },
   btnNext: {
     marginBottom: 20,
-    backgroundColor: '#0091ea',
+    backgroundColor: '#E94190',
     height: 40,
     width: 200,
     borderRadius: 20,

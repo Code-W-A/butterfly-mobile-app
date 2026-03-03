@@ -11,8 +11,10 @@ import {
 import * as Animatable from 'react-native-animatable';
 import { connect } from 'react-redux';
 
-import { Device, withTheme } from '@common';
+import { Device, Color, withTheme } from '@common';
 import { ROUTER } from '@app/navigation/constants';
+
+const EXTRA_ANDROID_TABBAR_OFFSET = 0;
 
 const styles = StyleSheet.create({
   tabbar: {
@@ -38,13 +40,24 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  tabIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    transform: [{ translateY: -8 }],
+  },
 });
 
 class TabBar extends PureComponent {
-  onPress = (index, route) => {
+  tabItemRefs = {};
+
+  getAndroidBottomInset = () => {
+    return 0;
+  };
+
+  onPress = route => {
     const { navigation } = this.props;
 
-    this.refs[`tabItem${index}`].flipInY(900);
+    this.tabItemRefs[route.key]?.flipInY?.(900);
 
     // back to main screen when is staying child route
 
@@ -64,6 +77,14 @@ class TabBar extends PureComponent {
     } = this.props;
 
     const { routes } = state;
+    const androidBottomInset = this.getAndroidBottomInset();
+    const baseTabBarHeight = Device.isIphoneX ? 60 : 49;
+    const activeRoute = routes[state.index];
+    const activeRouteOptions = activeRoute
+      ? descriptors[activeRoute.key]?.options
+      : null;
+    const shouldHideTabBar =
+      activeRouteOptions?.tabBarStyle?.display === 'none';
 
     const ignoreScreen = [
       'DetailScreen',
@@ -78,17 +99,27 @@ class TabBar extends PureComponent {
       'LoginStack',
     ];
 
+    if (shouldHideTabBar) {
+      return null;
+    }
+
     return (
       <View
         style={[
           styles.tabbar,
+          {
+            height: baseTabBarHeight + androidBottomInset,
+            paddingBottom: androidBottomInset + EXTRA_ANDROID_TABBAR_OFFSET,
+          },
           { backgroundColor: background, borderTopColor: background },
         ]}
       >
         {routes &&
           routes.map((route, index) => {
             const focused = index === state.index;
-            const tintColor = focused ? activeTintColor : inactiveTintColor;
+            const tintColor = focused
+              ? activeTintColor || Color.tabbarTint
+              : inactiveTintColor || Color.tabbarColor;
 
             if (ignoreScreen.indexOf(route.name) > -1) {
               return <View key={route.key} />;
@@ -104,11 +135,24 @@ class TabBar extends PureComponent {
               <TouchableWithoutFeedback
                 key={route.key}
                 style={styles.tab}
-                onPress={() => this.onPress(index, route)}
+                onPress={() => this.onPress(route)}
               >
-                <Animatable.View ref={`tabItem${index}`} style={styles.tab}>
-                  {tabOptions?.tabBarIcon &&
-                    tabOptions.tabBarIcon({ route, index, focused, tintColor })}
+                <Animatable.View
+                  ref={ref => {
+                    this.tabItemRefs[route.key] = ref;
+                  }}
+                  style={styles.tab}
+                >
+                  {tabOptions?.tabBarIcon && (
+                    <View style={styles.tabIconWrap}>
+                      {tabOptions.tabBarIcon({
+                        route,
+                        index,
+                        focused,
+                        tintColor,
+                      })}
+                    </View>
+                  )}
                 </Animatable.View>
               </TouchableWithoutFeedback>
             );

@@ -10,7 +10,7 @@ import {
   View,
   Image,
 } from 'react-native';
-import TimeAgo from '@custom/react-native-timeago';
+import TimeAgo from 'react-native-timeago';
 import { Tools, Constants, Images } from '@common';
 import { WishListIcon } from '@components';
 import { getProductImage } from '@app/Omni';

@@ -15,6 +15,14 @@ import { Languages, Images, withTheme } from '@common';
 import { Button } from '@components';
 import styles from './styles';
 
+const AVAILABLE_LANGUAGES = ['ro'];
+const LANGUAGE_LABELS = {
+  ro: {
+    icon: Images.IconFlag,
+    name: 'Romana',
+  },
+};
+
 class LanguagePicker extends PureComponent {
   static propTypes = {
     language: PropTypes.object,
@@ -22,15 +30,21 @@ class LanguagePicker extends PureComponent {
   };
 
   constructor(props) {
+    const initialLang =
+      props?.language?.lang && AVAILABLE_LANGUAGES.includes(props.language.lang)
+        ? props.language.lang
+        : AVAILABLE_LANGUAGES[0];
     super(props);
     this.state = {
-      selectedOption: this.props.language.lang,
+      selectedOption: initialLang,
       isLoading: false,
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.props.language.lang !== nextProps.language.lang) {
+  componentDidUpdate(prevProps) {
+    const prevLang = prevProps?.language?.lang;
+    const nextLang = this.props?.language?.lang;
+    if (prevLang !== nextLang) {
       // Enable for mode RTL
       setTimeout(() => {
         RNRestart.Restart();
@@ -39,10 +53,10 @@ class LanguagePicker extends PureComponent {
   }
 
   _handlePress = () => {
-    const { switchLanguage, switchRtl, language } = this.props;
+    const { switchLanguage, language } = this.props;
     const { selectedOption } = this.state;
-    if (selectedOption !== language.lang) {
-      const isRtl = selectedOption === 'ar';
+    if (selectedOption !== language?.lang) {
+      const isRtl = false;
 
       this.setState({ isLoading: true });
 
@@ -64,22 +78,9 @@ class LanguagePicker extends PureComponent {
     } = this.props;
 
     const renderOption = (option, selected, onSelect, index) => {
-      let icon = null;
-      let name = null;
-
-      switch (option) {
-        case 'en':
-          icon = Images.IconUkFlag;
-          name = 'English';
-          break;
-        case 'ar':
-          icon = Images.IconOmanFlag;
-          name = 'Arabic';
-          break;
-        default:
-          icon = Images.IconUkFlag;
-          name = 'English';
-      }
+      const mapped = LANGUAGE_LABELS[option] || LANGUAGE_LABELS.ro;
+      const icon = mapped.icon;
+      const name = mapped.name;
 
       return (
         <TouchableOpacity
@@ -112,7 +113,7 @@ class LanguagePicker extends PureComponent {
     return (
       <View>
         <RadioButtons
-          options={Languages.getAvailableLanguages()}
+          options={AVAILABLE_LANGUAGES}
           onSelection={selectedOption => this.setState({ selectedOption })}
           selectedOption={this.state.selectedOption}
           renderOption={renderOption}
@@ -120,15 +121,15 @@ class LanguagePicker extends PureComponent {
             <View style={{ margin: 10 }}>{optionNodes}</View>
           )}
         />
-        <View style={styles.buttonContainer}>
+        {/* <View style={styles.buttonContainer}>
           <Button
-            text={Languages.SwitchLanguage}
+            text="Aplica limba"
             style={styles.button}
             textStyle={styles.buttonText}
             isLoading={this.state.isLoading}
             onPress={this._handlePress}
           />
-        </View>
+        </View> */}
       </View>
     );
   }
