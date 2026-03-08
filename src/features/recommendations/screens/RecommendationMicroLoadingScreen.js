@@ -296,7 +296,7 @@ const RecommendationMicroLoadingScreen = ({ route, navigation, theme }) => {
   const backgroundColor = theme?.colors?.background || '#f6f8f9';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         {phase === 'finale' ? (
           <View style={styles.finaleOnlyWrap}>

@@ -591,7 +591,7 @@ const RecommendationResultsWOWScreen = ({ route, navigation, theme }) => {
   const backgroundColor = theme?.colors?.background || '#f6f8f9';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         <ScrollView
           showsVerticalScrollIndicator={false}

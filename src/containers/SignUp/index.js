@@ -19,6 +19,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import { getBottomSpace } from 'react-native-iphone-x-helper';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { initializeFirebase } from '@services/Firebase';
 import { getFirebaseAuthErrorMessage } from '@services/FirebaseAuthErrorMessages';
@@ -32,6 +33,8 @@ import { Icon, toast, error, Validate } from '@app/Omni';
 import { Spinner } from '@components';
 
 class SignUpScreen extends Component {
+  static contextType = SafeAreaInsetsContext;
+
   constructor(props) {
     super(props);
 
@@ -65,7 +68,9 @@ class SignUpScreen extends Component {
     this.onTogglePasswordVisibility = () =>
       this.setState(prev => ({ showPassword: !prev.showPassword }));
     this.onToggleConfirmPasswordVisibility = () =>
-      this.setState(prev => ({ showConfirmPassword: !prev.showConfirmPassword }));
+      this.setState(prev => ({
+        showConfirmPassword: !prev.showConfirmPassword,
+      }));
 
     this.focusLastName = () => this.lastName && this.lastName.focus();
     this.focusEmail = () => this.email && this.email.focus();
@@ -82,7 +87,9 @@ class SignUpScreen extends Component {
 
   onSignUpHandle = async () => {
     const { login, netInfo } = this.props;
-    if (!netInfo.isConnected) return toast(Languages.noConnection);
+    if (!netInfo.isConnected) {
+      return toast(Languages.noConnection);
+    }
 
     const {
       email,
@@ -97,11 +104,15 @@ class SignUpScreen extends Component {
       confirmPassword,
       isLoading,
     } = this.state;
-    if (isLoading) return;
+    if (isLoading) {
+      return;
+    }
     this.setState({ isLoading: true });
 
     const _error = this.validateForm();
-    if (_error) return this.stopAndToast(_error);
+    if (_error) {
+      return this.stopAndToast(_error);
+    }
 
     const user = {
       email,
@@ -221,7 +232,9 @@ class SignUpScreen extends Component {
       return;
     }
 
-    const selectedAsset = Array.isArray(result.assets) ? result.assets[0] : null;
+    const selectedAsset = Array.isArray(result.assets)
+      ? result.assets[0]
+      : null;
     if (!selectedAsset?.uri) {
       return;
     }
@@ -249,23 +262,10 @@ class SignUpScreen extends Component {
   };
 
   validateForm = () => {
-    const {
-      email,
-      phone,
-      password,
-      confirmPassword,
-      firstName,
-      lastName,
-    } =
+    const { email, phone, password, confirmPassword, firstName, lastName } =
       this.state;
     if (
-      Validate.isEmpty(
-        email,
-        firstName,
-        lastName,
-        password,
-        confirmPassword,
-      )
+      Validate.isEmpty(email, firstName, lastName, password, confirmPassword)
     ) {
       return Languages.PleaseCompleteForm;
     }
@@ -312,6 +312,7 @@ class SignUpScreen extends Component {
         colors: { background, text, placeholder },
       },
     } = this.props;
+    const bottomInset = Math.max(this.context?.bottom || 0, getBottomSpace());
     const isFormValid = this.isFormValid();
 
     return (
@@ -364,10 +365,7 @@ class SignUpScreen extends Component {
               {Languages.profileDetail}
             </Text>
             <View
-              style={styles.fieldWrap(
-                focusedField === 'firstName',
-                background,
-              )}
+              style={styles.fieldWrap(focusedField === 'firstName', background)}
             >
               <Icon
                 name="account-outline"
@@ -390,10 +388,7 @@ class SignUpScreen extends Component {
               />
             </View>
             <View
-              style={styles.fieldWrap(
-                focusedField === 'lastName',
-                background,
-              )}
+              style={styles.fieldWrap(focusedField === 'lastName', background)}
             >
               <Icon
                 name="account-outline"
@@ -415,8 +410,12 @@ class SignUpScreen extends Component {
                 onBlur={this.onBlurField}
               />
             </View>
-            <Text style={[styles.sectionLabel, { color: text }]}>Echipament</Text>
-            <View style={styles.fieldWrap(focusedField === 'blade', background)}>
+            <Text style={[styles.sectionLabel, { color: text }]}>
+              Echipament
+            </Text>
+            <View
+              style={styles.fieldWrap(focusedField === 'blade', background)}
+            >
               <Icon
                 name="table-tennis"
                 size={20}
@@ -434,7 +433,9 @@ class SignUpScreen extends Component {
                 onBlur={this.onBlurField}
               />
             </View>
-            <View style={styles.fieldWrap(focusedField === 'forehand', background)}>
+            <View
+              style={styles.fieldWrap(focusedField === 'forehand', background)}
+            >
               <Icon
                 name="layers-outline"
                 size={20}
@@ -452,7 +453,9 @@ class SignUpScreen extends Component {
                 onBlur={this.onBlurField}
               />
             </View>
-            <View style={styles.fieldWrap(focusedField === 'backhand', background)}>
+            <View
+              style={styles.fieldWrap(focusedField === 'backhand', background)}
+            >
               <Icon
                 name="layers-outline"
                 size={20}
@@ -475,7 +478,9 @@ class SignUpScreen extends Component {
             <Text style={[styles.sectionLabel, { color: text }]}>
               {Languages.accountDetails}
             </Text>
-            <View style={styles.fieldWrap(focusedField === 'email', background)}>
+            <View
+              style={styles.fieldWrap(focusedField === 'email', background)}
+            >
               <Icon
                 name={Icons.MaterialCommunityIcons.Email}
                 size={20}
@@ -497,7 +502,9 @@ class SignUpScreen extends Component {
                 onBlur={this.onBlurField}
               />
             </View>
-            <View style={styles.fieldWrap(focusedField === 'phone', background)}>
+            <View
+              style={styles.fieldWrap(focusedField === 'phone', background)}
+            >
               <Icon
                 name="phone-outline"
                 size={20}
@@ -519,10 +526,7 @@ class SignUpScreen extends Component {
               />
             </View>
             <View
-              style={styles.fieldWrap(
-                focusedField === 'password',
-                background,
-              )}
+              style={styles.fieldWrap(focusedField === 'password', background)}
             >
               <Icon
                 name={Icons.MaterialCommunityIcons.Lock}
@@ -564,7 +568,9 @@ class SignUpScreen extends Component {
               <Icon
                 name={Icons.MaterialCommunityIcons.Lock}
                 size={20}
-                color={focusedField === 'confirmPassword' ? Color.primary : text}
+                color={
+                  focusedField === 'confirmPassword' ? Color.primary : text
+                }
               />
               <TextInput
                 style={styles.fieldInput(text)}
@@ -595,7 +601,7 @@ class SignUpScreen extends Component {
             <View style={styles.scrollBottomSpacer} />
           </KeyboardAwareScrollView>
 
-          <View style={styles.footerWrap(background)}>
+          <View style={styles.footerWrap(background, bottomInset)}>
             <Button
               containerStyle={[
                 styles.signUpButton,
@@ -744,12 +750,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 4,
   },
-  footerWrap: background => ({
+  footerWrap: (background, bottomInset) => ({
     borderTopWidth: 1,
     borderTopColor: Color.blackDivide,
     paddingHorizontal: Styles.width * 0.08,
     paddingTop: 12,
-    paddingBottom: 12 + getBottomSpace(),
+    paddingBottom: 12 + bottomInset,
     backgroundColor: background || '#fff',
   }),
   signUpButton: {

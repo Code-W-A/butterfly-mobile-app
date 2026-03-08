@@ -95,7 +95,7 @@ const RecommendationSpecialistContactScreen = ({
   const backgroundColor = theme?.colors?.background || '#fff';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <ScrollView style={[styles.container, { backgroundColor }]}>
         <Text style={styles.title}>{texts.specialistTitle}</Text>
         <Text style={styles.subtitle}>{texts.specialistSubtitle}</Text>

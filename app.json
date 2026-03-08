@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Butterfly",
+    "name": "My Butterfly",
     "slug": "butterfly",
     "version": "5.0.1",
     "orientation": "portrait",
@@ -45,6 +45,7 @@
         "expo-build-properties",
         {
           "android": {
+            "ndkVersion": "27.1.12297006",
             "compileSdkVersion": 35,
             "targetSdkVersion": 35
           }

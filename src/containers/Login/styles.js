@@ -1,16 +1,15 @@
 /** @format */
 
 import { Dimensions, StyleSheet, I18nManager } from 'react-native';
-import { getBottomSpace } from 'react-native-iphone-x-helper';
 import { Color, Styles } from '@common';
 
 const { width, height } = Dimensions.get('window');
 
 export default StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingBottom: getBottomSpace(),
-  },
+  container: bottomInset => ({
+    flexGrow: 1,
+    paddingBottom: bottomInset,
+  }),
   logoWrap: {
     ...Styles.Common.ColumnCenter,
     flexGrow: 1,
@@ -19,10 +18,10 @@ export default StyleSheet.create({
     width: Styles.width * 0.8,
     height: (Styles.width * 0.8) / 2,
   },
-  subContain: {
+  subContain: bottomInset => ({
     paddingHorizontal: Styles.width * 0.08,
-    paddingBottom: 50,
-  },
+    paddingBottom: 50 + bottomInset,
+  }),
   headerWrap: {
     marginBottom: 10,
   },

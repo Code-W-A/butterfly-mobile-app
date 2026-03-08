@@ -24,6 +24,7 @@ import { Languages, Tools, withTheme } from '@common';
 import { initializeFirebase } from '@services/Firebase';
 import { deleteCurrentFirebaseAccount } from '@services/FirebaseAccountDeletion';
 import { ROUTER } from '@navigation/constants';
+import { clearRecommendationLocalState } from '../../features/recommendations/storage/recommendationLocalState';
 
 import styles from './styles';
 
@@ -112,7 +113,7 @@ class UserProfile extends PureComponent {
   };
 
   _handleLogout = async () => {
-    const { logout, navigation } = this.props;
+    const { logout } = this.props;
     try {
       const firebaseSetup = initializeFirebase();
       if (firebaseSetup?.auth) {
@@ -121,6 +122,7 @@ class UserProfile extends PureComponent {
     } catch (_error) {
       // Ignore Firebase sign out errors and proceed with local logout.
     } finally {
+      await clearRecommendationLocalState().catch(() => null);
       logout();
       this._navigateAfterSessionEnd();
     }
@@ -349,7 +351,7 @@ class UserProfile extends PureComponent {
 
     return (
       <View style={[styles.container, { backgroundColor: background }]}>
-        <ScrollView ref="scrollView">
+        <ScrollView>
           <UserProfileHeader
             onLogin={() => navigation.navigate('LoginScreen')}
             onLogout={this._handleLogout}
@@ -361,9 +363,7 @@ class UserProfile extends PureComponent {
 
           {userProfile.user && (
             <View style={[styles.profileSection(dark)]}>
-              <Text style={styles.headerSection}>
-                {'INFORMATII CONT'}
-              </Text>
+              <Text style={styles.headerSection}>{'INFORMATII CONT'}</Text>
               <UserProfileItem
                 label="Nume"
                 onPress={this._handlePress}
@@ -400,7 +400,8 @@ class UserProfile extends PureComponent {
                     labelColor={item.destructive ? '#d93838' : undefined}
                     value={
                       item.action === 'deleteAccount' && isDeletingAccount
-                        ? Languages.DeleteAccountInProgress || 'Stergem contul...'
+                        ? Languages.DeleteAccountInProgress ||
+                          'Stergem contul...'
                         : item.value
                     }
                     valueColor={item.destructive ? '#d93838' : undefined}
@@ -419,7 +420,10 @@ class UserProfile extends PureComponent {
           onRequestClose={this._closeDeleteModal}
         >
           <View style={styles.modalBackdrop}>
-            <Pressable style={styles.modalPressArea} onPress={this._closeDeleteModal} />
+            <Pressable
+              style={styles.modalPressArea}
+              onPress={this._closeDeleteModal}
+            />
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>
                 {(deleteModalStep === 1
@@ -453,7 +457,11 @@ class UserProfile extends PureComponent {
                     onPress={this._toggleDeleteReauthPasswordVisibility}
                   >
                     <Icon
-                      name={deleteReauthPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                      name={
+                        deleteReauthPasswordVisible
+                          ? 'eye-off-outline'
+                          : 'eye-outline'
+                      }
                       size={20}
                       color="#6b7786"
                     />
@@ -477,7 +485,9 @@ class UserProfile extends PureComponent {
                   activeOpacity={0.85}
                   style={[
                     styles.modalPrimaryButton,
-                    isDeletingAccount ? styles.modalPrimaryButtonDisabled : null,
+                    isDeletingAccount
+                      ? styles.modalPrimaryButtonDisabled
+                      : null,
                   ]}
                   onPress={
                     deleteModalStep === 1

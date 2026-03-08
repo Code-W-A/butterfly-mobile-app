@@ -2,7 +2,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HISTORY_KEY = '@recommendations:history:v1';
+export const HISTORY_KEY = '@recommendations:history:v1';
 const MAX_HISTORY_ITEMS = 50;
 const REMOTE_SYNC_TTL_MS = 60 * 1000;
 
@@ -127,7 +127,7 @@ const getRemoteContext = async () => {
   try {
     const { initializeFirebase } = require('@services/Firebase');
     const {
-      ensureRecommendationAuth,
+      requireRecommendationUser,
     } = require('../services/firebaseRecommendationAuth');
     const firestore = require('firebase/firestore');
     const firebaseSetup = initializeFirebase();
@@ -136,7 +136,7 @@ const getRemoteContext = async () => {
       return null;
     }
 
-    const user = await ensureRecommendationAuth(firebaseSetup.auth);
+    const user = await requireRecommendationUser(firebaseSetup.auth);
 
     if (!user?.uid) {
       return null;
@@ -262,6 +262,10 @@ export const saveHistorySessions = async sessions => {
   await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(normalized));
 
   return normalized;
+};
+
+export const resetHistoryStorageState = () => {
+  lastRemoteHistorySyncAt = 0;
 };
 
 export const appendHistorySession = async session => {

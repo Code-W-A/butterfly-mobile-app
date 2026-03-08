@@ -10,21 +10,25 @@ import {
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { connect } from 'react-redux';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { Device, Color, withTheme } from '@common';
 import { ROUTER } from '@app/navigation/constants';
 
 const EXTRA_ANDROID_TABBAR_OFFSET = 0;
+const COMPACT_ANDROID_TABBAR_HEIGHT = 44;
 
 const styles = StyleSheet.create({
   tabbar: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  tabbarContent: {
     height: Device.isIphoneX ? 60 : 49,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
   },
   tab: {
     alignSelf: 'stretch',
@@ -50,8 +54,12 @@ const styles = StyleSheet.create({
 class TabBar extends PureComponent {
   tabItemRefs = {};
 
-  getAndroidBottomInset = () => {
-    return 0;
+  getAndroidBottomInset = insets => {
+    if (Platform.OS !== 'android') {
+      return 0;
+    }
+
+    return Math.max(insets?.bottom || 0, 0);
   };
 
   onPress = route => {
@@ -64,7 +72,7 @@ class TabBar extends PureComponent {
     navigation.jumpTo(route.name);
   };
 
-  render() {
+  renderTabBar = insets => {
     const {
       state,
       descriptors,
@@ -77,8 +85,14 @@ class TabBar extends PureComponent {
     } = this.props;
 
     const { routes } = state;
-    const androidBottomInset = this.getAndroidBottomInset();
-    const baseTabBarHeight = Device.isIphoneX ? 60 : 49;
+    const androidBottomInset = this.getAndroidBottomInset(insets);
+    const hasAndroidNavigationBar =
+      Platform.OS === 'android' && androidBottomInset > 0;
+    const baseTabBarHeight = hasAndroidNavigationBar
+      ? COMPACT_ANDROID_TABBAR_HEIGHT
+      : Device.isIphoneX
+      ? 60
+      : 49;
     const activeRoute = routes[state.index];
     const activeRouteOptions = activeRoute
       ? descriptors[activeRoute.key]?.options
@@ -108,56 +122,65 @@ class TabBar extends PureComponent {
         style={[
           styles.tabbar,
           {
-            height: baseTabBarHeight + androidBottomInset,
             paddingBottom: androidBottomInset + EXTRA_ANDROID_TABBAR_OFFSET,
           },
           { backgroundColor: background, borderTopColor: background },
         ]}
       >
-        {routes &&
-          routes.map((route, index) => {
-            const focused = index === state.index;
-            const tintColor = focused
-              ? activeTintColor || Color.tabbarTint
-              : inactiveTintColor || Color.tabbarColor;
+        <View style={[styles.tabbarContent, { height: baseTabBarHeight }]}>
+          {routes &&
+            routes.map((route, index) => {
+              const focused = index === state.index;
+              const tintColor = focused
+                ? activeTintColor || Color.tabbarTint
+                : inactiveTintColor || Color.tabbarColor;
 
-            if (ignoreScreen.indexOf(route.name) > -1) {
-              return <View key={route.key} />;
-            }
+              if (ignoreScreen.indexOf(route.name) > -1) {
+                return <View key={route.key} />;
+              }
 
-            if (user === null && route.name === ROUTER.MY_ORDERS_STACK) {
-              return <View key={route.key} />;
-            }
+              if (user === null && route.name === ROUTER.MY_ORDERS_STACK) {
+                return <View key={route.key} />;
+              }
 
-            const tabOptions = descriptors[route.key]?.options;
+              const tabOptions = descriptors[route.key]?.options;
 
-            return (
-              <TouchableWithoutFeedback
-                key={route.key}
-                style={styles.tab}
-                onPress={() => this.onPress(route)}
-              >
-                <Animatable.View
-                  ref={ref => {
-                    this.tabItemRefs[route.key] = ref;
-                  }}
+              return (
+                <TouchableWithoutFeedback
+                  key={route.key}
                   style={styles.tab}
+                  onPress={() => this.onPress(route)}
                 >
-                  {tabOptions?.tabBarIcon && (
-                    <View style={styles.tabIconWrap}>
-                      {tabOptions.tabBarIcon({
-                        route,
-                        index,
-                        focused,
-                        tintColor,
-                      })}
-                    </View>
-                  )}
-                </Animatable.View>
-              </TouchableWithoutFeedback>
-            );
-          })}
+                  <Animatable.View
+                    ref={ref => {
+                      this.tabItemRefs[route.key] = ref;
+                    }}
+                    style={styles.tab}
+                  >
+                    {tabOptions?.tabBarIcon && (
+                      <View style={styles.tabIconWrap}>
+                        {tabOptions.tabBarIcon({
+                          route,
+                          index,
+                          focused,
+                          tintColor,
+                        })}
+                      </View>
+                    )}
+                  </Animatable.View>
+                </TouchableWithoutFeedback>
+              );
+            })}
+        </View>
       </View>
+    );
+  };
+
+  render() {
+    return (
+      <SafeAreaInsetsContext.Consumer>
+        {insets => this.renderTabBar(insets)}
+      </SafeAreaInsetsContext.Consumer>
     );
   }
 }

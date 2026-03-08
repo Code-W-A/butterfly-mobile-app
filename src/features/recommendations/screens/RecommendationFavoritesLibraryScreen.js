@@ -155,7 +155,7 @@ const RecommendationFavoritesLibraryScreen = ({ theme, navigation }) => {
   const backgroundColor = theme?.colors?.background || '#fff';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         <View style={styles.headerRow}>
           <View style={styles.headerTextWrap}>

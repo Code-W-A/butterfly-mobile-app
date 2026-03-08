@@ -31,6 +31,7 @@ const QuestionStepCard = ({
   question,
   value,
   onChangeValue,
+  onSelectOption,
   stepLabel,
   requiredError,
 }) => {
@@ -79,16 +80,43 @@ const QuestionStepCard = ({
     return null;
   }
 
-  const handleMultiSelectPress = optionValue => {
-    const currentValues = Array.isArray(value) ? value : [];
-    const exists = currentValues.includes(optionValue);
-
-    if (exists) {
-      onChangeValue(currentValues.filter(item => item !== optionValue));
+  const emitSelectOption = option => {
+    if (!option) {
       return;
     }
 
-    onChangeValue([...currentValues, optionValue]);
+    const optionValue = option.value;
+
+    if (questionType === 'multi_select') {
+      const currentValues = Array.isArray(value) ? value : [];
+      const exists = currentValues.includes(optionValue);
+      const nextValue = exists
+        ? currentValues.filter(item => item !== optionValue)
+        : [...currentValues, optionValue];
+
+      if (typeof onSelectOption === 'function') {
+        onSelectOption({
+          question,
+          option,
+          nextValue,
+        });
+        return;
+      }
+
+      onChangeValue(nextValue);
+      return;
+    }
+
+    if (typeof onSelectOption === 'function') {
+      onSelectOption({
+        question,
+        option,
+        nextValue: optionValue,
+      });
+      return;
+    }
+
+    onChangeValue(optionValue);
   };
 
   return (
@@ -109,7 +137,7 @@ const QuestionStepCard = ({
               key={option.value}
               label={option.label}
               selected={value === option.value}
-              onPress={() => onChangeValue(option.value)}
+              onPress={() => emitSelectOption(option)}
             />
           ))}
         </View>
@@ -122,7 +150,7 @@ const QuestionStepCard = ({
               key={option.value}
               label={option.label}
               selected={Array.isArray(value) && value.includes(option.value)}
-              onPress={() => handleMultiSelectPress(option.value)}
+              onPress={() => emitSelectOption(option)}
             />
           ))}
         </View>

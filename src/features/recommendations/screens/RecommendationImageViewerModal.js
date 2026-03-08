@@ -46,7 +46,7 @@ const RecommendationImageViewerModal = ({ route, navigation, theme }) => {
   };
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor: theme?.colors?.background || '#fff' }]}>
         <View style={styles.header}>
           <TouchableOpacity

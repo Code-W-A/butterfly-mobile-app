@@ -172,7 +172,7 @@ const RecommendationDetailScreen = ({ route, theme, navigation }) => {
   const backgroundColor = theme?.colors?.background || '#fff';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         <ScrollView
           contentContainerStyle={[

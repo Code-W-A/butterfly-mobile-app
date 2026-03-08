@@ -2,6 +2,7 @@
 
 import React from 'react';
 import {
+  Alert,
   Keyboard,
   Platform,
   ScrollView,
@@ -30,6 +31,7 @@ import {
   getVisibleQuestions,
   pruneHiddenAnswers,
 } from '../services/questionVisibility';
+import { handleQuestionnaireSelectOption } from '../services/questionnaireExitRule';
 import { isQuestionRequired } from '../types/contracts';
 
 const isValueMissing = value => {
@@ -61,8 +63,16 @@ const hasInvalidBudgetRange = value => {
     return false;
   }
 
-  const hasMin = !(value.min === undefined || value.min === null || value.min === '');
-  const hasMax = !(value.max === undefined || value.max === null || value.max === '');
+  const hasMin = !(
+    value.min === undefined ||
+    value.min === null ||
+    value.min === ''
+  );
+  const hasMax = !(
+    value.max === undefined ||
+    value.max === null ||
+    value.max === ''
+  );
 
   if (!hasMin || !hasMax) {
     return false;
@@ -105,7 +115,9 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
 
   React.useEffect(() => {
     const nextName =
-      `${userProfile?.first_name || ''} ${userProfile?.last_name || ''}`.trim() ||
+      `${userProfile?.first_name || ''} ${
+        userProfile?.last_name || ''
+      }`.trim() ||
       userProfile?.name ||
       '';
     const nextEmail = userProfile?.email || '';
@@ -197,17 +209,69 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
     .replace('{{current}}', String(stepIndex + 1))
     .replace('{{total}}', String(totalSteps));
 
-  const onChangeQuestionValue = nextValue => {
-    if (!currentQuestion) {
+  const onBackToMenu = React.useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: RECOMMENDATION_ROUTES.AUTH }],
+    });
+  }, [navigation]);
+
+  const updateQuestionAnswer = React.useCallback((questionId, nextValue) => {
+    if (!questionId) {
       return;
     }
 
     setRequiredError('');
     setAnswers(prev => ({
       ...prev,
-      [currentQuestion.id]: nextValue,
+      [questionId]: nextValue,
     }));
+  }, []);
+
+  const onChangeQuestionValue = nextValue => {
+    if (!currentQuestion) {
+      return;
+    }
+
+    updateQuestionAnswer(currentQuestion.id, nextValue);
   };
+
+  const onSelectQuestionOption = React.useCallback(
+    ({ question, option, nextValue }) => {
+      if (!question?.id) {
+        return;
+      }
+
+      handleQuestionnaireSelectOption({
+        allowExit: stepIndex === 0,
+        option,
+        nextValue,
+        onExit: () => {
+          setRequiredError('');
+          Alert.alert(
+            texts.questionnaireExitConfirmTitle,
+            texts.questionnaireExitConfirmMessage,
+            [
+              {
+                text: texts.questionnaireExitConfirmCancel,
+                style: 'cancel',
+              },
+              {
+                text: texts.questionnaireExitConfirmContinue,
+                style: 'destructive',
+                onPress: onBackToMenu,
+              },
+            ],
+            { cancelable: true },
+          );
+        },
+        onContinue: value => {
+          updateQuestionAnswer(question.id, value);
+        },
+      });
+    },
+    [onBackToMenu, stepIndex, updateQuestionAnswer],
+  );
 
   const validateCurrentQuestion = () => {
     if (!currentQuestion) {
@@ -292,13 +356,6 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
     setStepIndex(prev => Math.max(prev - 1, 0));
   };
 
-  const onBackToMenu = React.useCallback(() => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: RECOMMENDATION_ROUTES.AUTH }],
-    });
-  }, [navigation]);
-
   const onFinalize = async () => {
     const hasAllRequiredQuestions = validateAllRequiredVisibleQuestions();
     const isContactValid = validateContact();
@@ -338,7 +395,7 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
 
   if (loading) {
     return (
-      <SafeAreaView>
+      <SafeAreaView topInsetEnabled>
         <View style={styles.screen}>
           <View style={styles.container}>
             <QuestionnaireSkeleton label={texts.questionnaireLoading} />
@@ -350,7 +407,7 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
 
   if (!questionnaire || questions.length === 0) {
     return (
-      <SafeAreaView>
+      <SafeAreaView topInsetEnabled>
         <View style={styles.screen}>
           <View style={styles.container}>
             <EmptyState title={texts.questionnaireNoActive} />
@@ -370,7 +427,7 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
   }
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={styles.screen}>
         <View style={styles.container}>
           <View style={styles.header}>
@@ -480,6 +537,7 @@ const RecommendationQuestionnaireScreen = ({ navigation, route }) => {
                 question={currentQuestion}
                 value={answers[currentQuestion?.id]}
                 onChangeValue={onChangeQuestionValue}
+                onSelectOption={onSelectQuestionOption}
                 requiredError={requiredError}
                 stepLabel={`Întrebare ${stepIndex + 1}`}
               />

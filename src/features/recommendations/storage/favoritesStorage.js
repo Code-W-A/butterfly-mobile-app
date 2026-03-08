@@ -2,12 +2,15 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const FAVORITES_KEY = '@recommendations:favorites:v1';
-const PACKAGE_FAVORITES_KEY = '@recommendations:package-favorites:v1';
+export const FAVORITES_KEY = '@recommendations:favorites:v1';
+export const PACKAGE_FAVORITES_KEY = '@recommendations:package-favorites:v1';
 const REMOTE_SYNC_TTL_MS = 60 * 1000;
 const REMOTE_FAVORITES_LIMIT = 200;
+const REMOTE_PRODUCT_FAVORITES_COLLECTION = 'favorites';
+const REMOTE_PACKAGE_FAVORITES_COLLECTION = 'favoritePackages';
 
 let lastRemoteFavoritesSyncAt = 0;
+let lastRemotePackageFavoritesSyncAt = 0;
 
 const parseFavorites = value => {
   if (!value) {
@@ -82,7 +85,7 @@ const getRemoteContext = async () => {
   try {
     const { initializeFirebase } = require('@services/Firebase');
     const {
-      ensureRecommendationAuth,
+      requireRecommendationUser,
     } = require('../services/firebaseRecommendationAuth');
     const firestore = require('firebase/firestore');
     const firebaseSetup = initializeFirebase();
@@ -91,7 +94,7 @@ const getRemoteContext = async () => {
       return null;
     }
 
-    const user = await ensureRecommendationAuth(firebaseSetup.auth);
+    const user = await requireRecommendationUser(firebaseSetup.auth);
 
     if (!user?.uid) {
       return null;
@@ -107,6 +110,14 @@ const getRemoteContext = async () => {
   }
 };
 
+const shouldSyncFromRemote = (lastSyncAt, forceRemote) => {
+  if (forceRemote) {
+    return true;
+  }
+
+  return Date.now() - lastSyncAt > REMOTE_SYNC_TTL_MS;
+};
+
 const readRemoteFavorites = async () => {
   const context = await getRemoteContext();
 
@@ -119,7 +130,7 @@ const readRemoteFavorites = async () => {
     context.db,
     'users',
     context.userId,
-    'favorites',
+    REMOTE_PRODUCT_FAVORITES_COLLECTION,
   );
   const favoritesQuery = query(favoritesRef, limit(REMOTE_FAVORITES_LIMIT));
   const snapshot = await getDocs(favoritesQuery);
@@ -149,7 +160,7 @@ const upsertRemoteFavorite = async favoriteItem => {
     context.db,
     'users',
     context.userId,
-    'favorites',
+    REMOTE_PRODUCT_FAVORITES_COLLECTION,
     favoriteItem.productId,
   );
 
@@ -179,19 +190,11 @@ const deleteRemoteFavorite = async productId => {
     context.db,
     'users',
     context.userId,
-    'favorites',
+    REMOTE_PRODUCT_FAVORITES_COLLECTION,
     productId,
   );
   await deleteDoc(favoriteRef);
   return true;
-};
-
-const shouldSyncFromRemote = forceRemote => {
-  if (forceRemote) {
-    return true;
-  }
-
-  return Date.now() - lastRemoteFavoritesSyncAt > REMOTE_SYNC_TTL_MS;
 };
 
 export const getFavoriteProducts = async (options = {}) => {
@@ -199,7 +202,7 @@ export const getFavoriteProducts = async (options = {}) => {
   const storedValue = await AsyncStorage.getItem(FAVORITES_KEY);
   const localFavorites = normalizeFavorites(parseFavorites(storedValue));
 
-  if (!shouldSyncFromRemote(forceRemote)) {
+  if (!shouldSyncFromRemote(lastRemoteFavoritesSyncAt, forceRemote)) {
     return localFavorites;
   }
 
@@ -227,6 +230,11 @@ export const saveFavoriteProducts = async favorites => {
     JSON.stringify(normalizedFavorites),
   );
   return normalizedFavorites;
+};
+
+export const resetFavoritesStorageState = () => {
+  lastRemoteFavoritesSyncAt = 0;
+  lastRemotePackageFavoritesSyncAt = 0;
 };
 
 export const isProductFavorite = (favorites, productId) => {
@@ -309,9 +317,138 @@ const normalizePackageFavorites = favorites => {
     .sort((first, second) => second.createdAt - first.createdAt);
 };
 
-export const getFavoritePackages = async () => {
+const mergePackageFavorites = (localFavorites, remoteFavorites) => {
+  const map = new Map();
+
+  [...localFavorites, ...remoteFavorites].forEach(item => {
+    const normalizedItem = normalizePackageFavoriteItem(item);
+
+    if (!normalizedItem) {
+      return;
+    }
+
+    const existing = map.get(normalizedItem.packageId);
+
+    if (
+      !existing ||
+      Number(normalizedItem.createdAt || 0) >= Number(existing.createdAt || 0)
+    ) {
+      map.set(normalizedItem.packageId, normalizedItem);
+    }
+  });
+
+  return normalizePackageFavorites(Array.from(map.values()));
+};
+
+const readRemotePackageFavorites = async () => {
+  const context = await getRemoteContext();
+
+  if (!context) {
+    return null;
+  }
+
+  const { collection, getDocs, limit, query } = context.firestore;
+  const favoritesRef = collection(
+    context.db,
+    'users',
+    context.userId,
+    REMOTE_PACKAGE_FAVORITES_COLLECTION,
+  );
+  const favoritesQuery = query(favoritesRef, limit(REMOTE_FAVORITES_LIMIT));
+  const snapshot = await getDocs(favoritesQuery);
+
+  return normalizePackageFavorites(
+    snapshot.docs.map(docSnapshot => {
+      const data = docSnapshot.data() || {};
+
+      return {
+        packageId: data.packageId || docSnapshot.id,
+        createdAt: Number(data.createdAt || data.updatedAt || 0) || Date.now(),
+        packageSnapshot: data.packageSnapshot || data.package || {},
+      };
+    }),
+  );
+};
+
+const upsertRemotePackageFavorite = async favoriteItem => {
+  const context = await getRemoteContext();
+
+  if (!context || !favoriteItem?.packageId) {
+    return false;
+  }
+
+  const { doc, setDoc } = context.firestore;
+  const favoriteRef = doc(
+    context.db,
+    'users',
+    context.userId,
+    REMOTE_PACKAGE_FAVORITES_COLLECTION,
+    favoriteItem.packageId,
+  );
+
+  await setDoc(
+    favoriteRef,
+    {
+      packageId: favoriteItem.packageId,
+      createdAt: Number(favoriteItem.createdAt || Date.now()),
+      updatedAt: Date.now(),
+      packageSnapshot: favoriteItem.packageSnapshot || {},
+    },
+    { merge: true },
+  );
+
+  return true;
+};
+
+const deleteRemotePackageFavorite = async packageId => {
+  const context = await getRemoteContext();
+
+  if (!context || !packageId) {
+    return false;
+  }
+
+  const { deleteDoc, doc } = context.firestore;
+  const favoriteRef = doc(
+    context.db,
+    'users',
+    context.userId,
+    REMOTE_PACKAGE_FAVORITES_COLLECTION,
+    packageId,
+  );
+  await deleteDoc(favoriteRef);
+  return true;
+};
+
+export const getFavoritePackages = async (options = {}) => {
+  const { forceRemote = false } = options;
   const storedValue = await AsyncStorage.getItem(PACKAGE_FAVORITES_KEY);
-  return normalizePackageFavorites(parseFavorites(storedValue));
+  const localFavorites = normalizePackageFavorites(parseFavorites(storedValue));
+
+  if (!shouldSyncFromRemote(lastRemotePackageFavoritesSyncAt, forceRemote)) {
+    return localFavorites;
+  }
+
+  try {
+    const remoteFavorites = await readRemotePackageFavorites();
+
+    if (!Array.isArray(remoteFavorites)) {
+      return localFavorites;
+    }
+
+    const mergedFavorites = mergePackageFavorites(
+      localFavorites,
+      remoteFavorites,
+    );
+    await AsyncStorage.setItem(
+      PACKAGE_FAVORITES_KEY,
+      JSON.stringify(mergedFavorites),
+    );
+    lastRemotePackageFavoritesSyncAt = Date.now();
+
+    return mergedFavorites;
+  } catch (_error) {
+    return localFavorites;
+  }
 };
 
 export const saveFavoritePackages = async favorites => {
@@ -349,5 +486,15 @@ export const toggleFavoritePackage = async ({ favorites, packageMatch }) => {
   );
 
   await saveFavoritePackages(nextFavorites);
+
+  if (alreadyFavorite) {
+    deleteRemotePackageFavorite(packageId).catch(() => null);
+  } else {
+    const favoriteItem = nextFavorites.find(
+      item => item.packageId === packageId,
+    );
+    upsertRemotePackageFavorite(favoriteItem).catch(() => null);
+  }
+
   return nextFavorites;
 };

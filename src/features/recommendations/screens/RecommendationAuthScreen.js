@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useDispatch } from 'react-redux';
 
 import { ButtonIndex, SafeAreaView } from '@components';
 import { Icon, toast } from '@app/Omni';
@@ -32,7 +33,10 @@ import {
 } from '../components/RecommendationAuthSkeletons';
 import texts from '../constants/texts.ro';
 import { RECOMMENDATION_ROUTES } from '../navigation/routes';
-import { ensureRecommendationAuth } from '../services/firebaseRecommendationAuth';
+import {
+  isRecommendationLoginRequiredError,
+  requireRecommendationUser,
+} from '../services/firebaseRecommendationAuth';
 import {
   mapQuestionnaireMenuItems,
   selectHistoryPreview,
@@ -42,6 +46,9 @@ import { computeRecommendations } from '../services/recommendationCallable';
 import { getActiveQuestionnaires } from '../services/questionnaireRepository';
 import { storeHistorySession } from '../services/sessionStore';
 import { getHistorySessions } from '../storage/historyStorage';
+import { clearRecommendationLocalState } from '../storage/recommendationLocalState';
+
+const { actions: userActions } = require('@redux/UserRedux');
 
 const HISTORY_PREVIEW_LIMIT = 3;
 const QUESTIONNAIRE_PREVIEW_LIMIT = 2;
@@ -57,6 +64,7 @@ const formatSessionDate = value => {
 };
 
 const RecommendationAuthScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
   const [checking, setChecking] = React.useState(false);
   const [questionnairesLoading, setQuestionnairesLoading] =
     React.useState(false);
@@ -130,7 +138,9 @@ const RecommendationAuthScreen = ({ navigation }) => {
       setHistoryPreview(selectHistoryPreview(sessions, HISTORY_PREVIEW_LIMIT));
       setHistoryError('');
     } catch (error) {
-      setHistoryError(getFirebaseUserErrorMessage(error, texts.callableGeneric));
+      setHistoryError(
+        getFirebaseUserErrorMessage(error, texts.callableGeneric),
+      );
     } finally {
       setHistoryLoading(false);
     }
@@ -153,12 +163,21 @@ const RecommendationAuthScreen = ({ navigation }) => {
     const nextDisplayName =
       resolveFirstName(currentUser, profile) || texts.authGreetingDefault;
     const nextAvatarUrl =
-      (typeof profile?.avatarUrl === 'string' ? profile.avatarUrl.trim() : '') ||
-      (typeof currentUser?.photoURL === 'string' ? currentUser.photoURL.trim() : '');
+      (typeof profile?.avatarUrl === 'string'
+        ? profile.avatarUrl.trim()
+        : '') ||
+      (typeof currentUser?.photoURL === 'string'
+        ? currentUser.photoURL.trim()
+        : '');
 
     setDisplayName(nextDisplayName);
     setAvatarUrl(nextAvatarUrl);
   }, [resolveFirstName]);
+
+  const clearSessionAndReturnToLogin = React.useCallback(async () => {
+    await clearRecommendationLocalState().catch(() => null);
+    dispatch(userActions.logout());
+  }, [dispatch]);
 
   const runFirebaseCheck = React.useCallback(async () => {
     setChecking(true);
@@ -187,18 +206,29 @@ const RecommendationAuthScreen = ({ navigation }) => {
     }
 
     try {
-      await ensureRecommendationAuth(firebaseSetup.auth);
+      await requireRecommendationUser(firebaseSetup.auth);
       await loadUserProfilePreview();
       setErrorMessage('');
       await Promise.all([loadQuestionnaires(), loadHistoryPreview()]);
     } catch (error) {
+      if (isRecommendationLoginRequiredError(error)) {
+        await clearSessionAndReturnToLogin();
+        return;
+      }
       setQuestionnaires([]);
       setHistoryPreview([]);
-      setErrorMessage(getFirebaseUserErrorMessage(error, texts.callableGeneric));
+      setErrorMessage(
+        getFirebaseUserErrorMessage(error, texts.callableGeneric),
+      );
     } finally {
       setChecking(false);
     }
-  }, [loadHistoryPreview, loadQuestionnaires, loadUserProfilePreview]);
+  }, [
+    clearSessionAndReturnToLogin,
+    loadHistoryPreview,
+    loadQuestionnaires,
+    loadUserProfilePreview,
+  ]);
 
   React.useEffect(() => {
     runFirebaseCheck();
@@ -316,7 +346,7 @@ const RecommendationAuthScreen = ({ navigation }) => {
     !checking && !questionnairesLoading && questionnaireMenuItems.length === 0;
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <LinearGradient
         colors={BACKGROUND_COLORS}
         style={styles.gradientContainer}
@@ -346,10 +376,16 @@ const RecommendationAuthScreen = ({ navigation }) => {
                       />
                     </View>
                     <Text style={styles.headerGreeting}>
-                      <Text style={styles.headerGreetingBrand}>Open the World</Text>
+                      <Text style={styles.headerGreetingBrand}>
+                        Open the World
+                      </Text>
                       {', '}
-                      <Text style={styles.headerGreetingName}>{displayName}</Text>
-                      <Text style={styles.headerGreetingExclamation}>{' !'}</Text>
+                      <Text style={styles.headerGreetingName}>
+                        {displayName}
+                      </Text>
+                      <Text style={styles.headerGreetingExclamation}>
+                        {' !'}
+                      </Text>
                     </Text>
                   </View>
 
@@ -359,7 +395,9 @@ const RecommendationAuthScreen = ({ navigation }) => {
                     onPress={onOpenMStoreProfile}
                   >
                     <Image
-                      source={avatarUrl ? { uri: avatarUrl } : Images.defaultAvatar}
+                      source={
+                        avatarUrl ? { uri: avatarUrl } : Images.defaultAvatar
+                      }
                       resizeMode="cover"
                       style={styles.avatarImage}
                     />
@@ -388,7 +426,9 @@ const RecommendationAuthScreen = ({ navigation }) => {
               />
 
               {questionnairesLoading && !checking ? (
-                <QuestionnaireListSkeleton count={QUESTIONNAIRE_PREVIEW_LIMIT} />
+                <QuestionnaireListSkeleton
+                  count={QUESTIONNAIRE_PREVIEW_LIMIT}
+                />
               ) : null}
 
               {errorMessage ? (
@@ -428,7 +468,9 @@ const RecommendationAuthScreen = ({ navigation }) => {
                 onActionPress={onOpenHistoryLibrary}
               />
 
-              {historyLoading && !checking ? <HistoryListSkeleton count={3} /> : null}
+              {historyLoading && !checking ? (
+                <HistoryListSkeleton count={3} />
+              ) : null}
 
               {historyError ? (
                 <Text style={styles.historyErrorText}>{historyError}</Text>

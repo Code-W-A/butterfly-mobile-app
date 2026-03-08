@@ -1,5 +1,8 @@
 /** @format */
 
 export { computeRecommendations } from './recommendationCallable';
-export { ensureRecommendationAuth } from './firebaseRecommendationAuth';
+export {
+  requireRecommendationUser,
+  isRecommendationLoginRequiredError,
+} from './firebaseRecommendationAuth';
 export { getActiveQuestionnaireWithQuestions } from './questionnaireRepository';

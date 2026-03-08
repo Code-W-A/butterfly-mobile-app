@@ -13,7 +13,17 @@ import Navigation, { navigationRef } from '@navigation';
 import { ROUTER } from '@navigation/constants';
 import * as LayoutRedux from '@redux/LayoutRedux';
 import * as NetInfoRedux from '@redux/NetInfoRedux';
+import { actions as userActions } from '@redux/UserRedux';
 import { initializeFirebase } from '@services/Firebase';
+import {
+  getFirebaseUserProfile,
+  mapFirebaseUserToAppUser,
+} from '@services/FirebaseUserProfile';
+import { clearRecommendationLocalState } from './features/recommendations/storage/recommendationLocalState';
+import {
+  isRecommendationLoginRequiredError,
+  requireRecommendationUser,
+} from './features/recommendations/services/firebaseRecommendationAuth';
 
 import MenuSide from '@components/LeftMenu/MenuOverlay';
 // import MenuSide from "@components/LeftMenu/MenuScale";
@@ -33,10 +43,13 @@ const ALWAYS_SHOW_ONBOARDING_IN_DEV = Boolean(
 const Router = props => {
   const [loading, setLoading] = React.useState(true);
   const [isNavigationReady, setIsNavigationReady] = React.useState(false);
+  const [sessionBootstrapLoading, setSessionBootstrapLoading] =
+    React.useState(true);
   const [showDevOnboarding, setShowDevOnboarding] = React.useState(
     ALWAYS_SHOW_ONBOARDING_IN_DEV,
   );
-  const hasHandledPostIntroAuthRef = React.useRef(false);
+  const hasHandledLoggedOutStateRef = React.useRef(false);
+  const hasResolvedInitialSessionRef = React.useRef(false);
 
   const dispatch = useDispatch();
 
@@ -63,30 +76,120 @@ const Router = props => {
   const initializing = useSelector(state => state.layouts.initializing);
 
   React.useEffect(() => {
-    if (!introStatus) {
-      hasHandledPostIntroAuthRef.current = false;
+    if (hasResolvedInitialSessionRef.current) {
+      return undefined;
     }
-  }, [introStatus]);
+
+    if (introStatus && currentUser) {
+      hasResolvedInitialSessionRef.current = true;
+      setSessionBootstrapLoading(false);
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const restoreAuthenticatedSession = async () => {
+      try {
+        const firebaseSetup = initializeFirebase();
+
+        if (!firebaseSetup?.auth) {
+          return;
+        }
+
+        const firebaseUser = await requireRecommendationUser(
+          firebaseSetup.auth,
+        );
+
+        if (!firebaseUser?.uid) {
+          return;
+        }
+
+        const shouldSyncReduxUser =
+          !currentUser ||
+          String(currentUser?.uid || currentUser?.id || '') !==
+            firebaseUser.uid;
+
+        if (shouldSyncReduxUser) {
+          const profile = await getFirebaseUserProfile(firebaseUser).catch(
+            () => null,
+          );
+          const appUser = mapFirebaseUserToAppUser({
+            firebaseUser,
+            profile,
+          });
+
+          dispatch(userActions.login(appUser, firebaseUser.uid));
+        }
+
+        if (!introStatus) {
+          dispatch(userActions.finishIntro());
+        }
+      } catch (error) {
+        if (!isRecommendationLoginRequiredError(error)) {
+          console.warn(
+            `[Router] Failed to restore authenticated session: ${
+              error?.message || error
+            }`,
+          );
+        }
+      } finally {
+        hasResolvedInitialSessionRef.current = true;
+
+        if (isMounted) {
+          setSessionBootstrapLoading(false);
+        }
+      }
+    };
+
+    restoreAuthenticatedSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, dispatch, introStatus]);
 
   React.useEffect(() => {
     if (!introStatus || loading || initializing || !isNavigationReady) {
+      hasHandledLoggedOutStateRef.current = false;
       return;
     }
 
-    if (hasHandledPostIntroAuthRef.current) {
+    if (currentUser) {
+      hasHandledLoggedOutStateRef.current = false;
       return;
     }
 
-    hasHandledPostIntroAuthRef.current = true;
+    if (hasHandledLoggedOutStateRef.current) {
+      return;
+    }
 
-    if (!currentUser) {
+    hasHandledLoggedOutStateRef.current = true;
+    let isActive = true;
+
+    const redirectLoggedOutUser = async () => {
+      try {
+        await clearRecommendationLocalState();
+      } catch (_error) {
+        // Continue redirect even if local cleanup fails.
+      }
+
+      if (!isActive) {
+        return;
+      }
+
       navigationRef.current?.dispatch(
         CommonActions.reset({
           index: 0,
           routes: [{ name: ROUTER.LOGIN }],
         }),
       );
-    }
+    };
+
+    redirectLoggedOutUser();
+
+    return () => {
+      isActive = false;
+    };
   }, [currentUser, initializing, introStatus, isNavigationReady, loading]);
 
   React.useEffect(() => {
@@ -157,6 +260,10 @@ const Router = props => {
 
     closeDrawer();
   };
+
+  if (sessionBootstrapLoading) {
+    return <SplashScreen navigation={props.navigation} />;
+  }
 
   if (!introStatus) {
     return <AppIntro onDone={() => setShowDevOnboarding(false)} />;

@@ -29,7 +29,7 @@ export const reducer = (state = initialState, action) => {
 
   switch (type) {
     case types.LOGOUT:
-      return { ...initialState };
+      return { ...initialState, finishIntro: state.finishIntro };
     case types.LOGIN:
       return { ...state, user, token };
     case types.FINISH_INTRO:

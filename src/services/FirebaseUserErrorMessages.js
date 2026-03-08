@@ -30,6 +30,8 @@ const FIREBASE_MESSAGES_RO = {
     'Nu s-a putut realiza conexiunea. Verifica internetul.',
   'auth/requires-recent-login':
     'Pentru aceasta actiune, autentifica-te din nou.',
+  'auth/login-required':
+    'Trebuie să fii autentificat pentru a primi recomandări.',
   'auth/internal-error':
     'A aparut o eroare interna. Incearca din nou mai tarziu.',
 
@@ -40,8 +42,7 @@ const FIREBASE_MESSAGES_RO = {
   'already-exists': 'Resursa exista deja.',
   'resource-exhausted':
     'Limita de utilizare a fost atinsa. Incearca din nou mai tarziu.',
-  'failed-precondition':
-    'Operatiunea nu poate fi finalizata in acest moment.',
+  'failed-precondition': 'Operatiunea nu poate fi finalizata in acest moment.',
   aborted: 'Operatiunea a fost intrerupta. Te rugam incearca din nou.',
   'out-of-range': 'Valoarea introdusa este in afara limitelor permise.',
   unimplemented: 'Aceasta functionalitate nu este disponibila momentan.',
@@ -74,7 +75,6 @@ const FIREBASE_MESSAGES_RO = {
     'Serviciul este indisponibil momentan. Incearca din nou in cateva momente.',
   'functions/deadline-exceeded':
     'Cererea a expirat. Verifica internetul si reincearca.',
-
 };
 
 const FIREBASE_REST_MESSAGES_RO = {

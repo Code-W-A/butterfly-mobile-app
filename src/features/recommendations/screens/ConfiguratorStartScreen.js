@@ -20,7 +20,7 @@ const ConfiguratorStartScreen = ({ route, navigation, theme }) => {
   const backgroundColor = theme?.colors?.background || '#f6f8f9';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <ScrollView style={[styles.container, { backgroundColor }]}>
         <Text style={styles.title}>{texts.configuratorTitle}</Text>
         <Text style={styles.subtitle}>{texts.configuratorSubtitle}</Text>

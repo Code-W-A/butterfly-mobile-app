@@ -138,7 +138,7 @@ const RecommendationQuestionnaireLibraryScreen = ({ navigation, theme }) => {
   const backgroundColor = theme?.colors?.background || '#f8fafd';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         {loading ? (
           <View style={styles.loadingWrap}>

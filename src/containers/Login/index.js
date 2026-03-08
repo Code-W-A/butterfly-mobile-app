@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { connect } from 'react-redux';
+import { getBottomSpace } from 'react-native-iphone-x-helper';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { trim } from 'lodash';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
@@ -27,12 +29,14 @@ import {
   ensureFirebaseUserProfile,
   mapFirebaseUserToAppUser,
 } from '@services/FirebaseUserProfile';
+import { clearRecommendationLocalState } from '../../features/recommendations/storage/recommendationLocalState';
 
 import { ButtonIndex } from '@components';
 import styles from './styles';
 
 class LoginScreen extends PureComponent {
-  // eslint-disable-next-line react/static-property-placement
+  static contextType = SafeAreaInsetsContext;
+
   static propTypes = {
     user: PropTypes.object,
     isLogout: PropTypes.bool,
@@ -71,12 +75,7 @@ class LoginScreen extends PureComponent {
   }
 
   componentDidUpdate(prevProps) {
-    const {
-      onViewCartScreen,
-      user,
-      onViewHomeScreen,
-      route,
-    } = this.props;
+    const { onViewCartScreen, user, onViewHomeScreen, route } = this.props;
     const nextUser = user.user;
     const prevUser = prevProps.user.user;
     const params = route?.params;
@@ -110,6 +109,7 @@ class LoginScreen extends PureComponent {
     } catch (_error) {
       // Ignore signOut errors and still clear local state.
     } finally {
+      await clearRecommendationLocalState().catch(() => null);
       logout();
       this.setState({ isLoading: false });
       onViewHomeScreen();
@@ -162,7 +162,9 @@ class LoginScreen extends PureComponent {
       this._onBack();
       login(appUser, credential.user.uid);
     } catch (error) {
-      this.stopAndToast(getFirebaseAuthErrorMessage(error, Languages.CanNotLogin));
+      this.stopAndToast(
+        getFirebaseAuthErrorMessage(error, Languages.CanNotLogin),
+      );
     }
   };
 
@@ -188,7 +190,9 @@ class LoginScreen extends PureComponent {
 
   checkConnection = () => {
     const { netInfo } = this.props;
-    if (!netInfo.isConnected) toast(Languages.noConnection);
+    if (!netInfo.isConnected) {
+      toast(Languages.noConnection);
+    }
     return netInfo.isConnected;
   };
 
@@ -209,6 +213,7 @@ class LoginScreen extends PureComponent {
         colors: { background, text, placeholder },
       },
     } = this.props;
+    const bottomInset = Math.max(this.context?.bottom || 0, getBottomSpace());
 
     return (
       <KeyboardAwareScrollView
@@ -219,7 +224,7 @@ class LoginScreen extends PureComponent {
         extraHeight={Platform.OS === 'android' ? 120 : 80}
         extraScrollHeight={Platform.OS === 'android' ? 24 : 12}
         style={{ backgroundColor: background }}
-        contentContainerStyle={[styles.container, { flexGrow: 1 }]}
+        contentContainerStyle={styles.container(bottomInset)}
       >
         <View style={styles.logoWrap}>
           <Image
@@ -228,9 +233,11 @@ class LoginScreen extends PureComponent {
             resizeMode="contain"
           />
         </View>
-        <View style={styles.subContain}>
+        <View style={styles.subContain(bottomInset)}>
           <View style={styles.headerWrap}>
-            <Text style={[styles.title, { color: text }]}>{Languages.Login}</Text>
+            <Text style={[styles.title, { color: text }]}>
+              {Languages.Login}
+            </Text>
             <Text style={[styles.subtitle, { color: text }]}>
               Continua in contul tau Butterfly.
             </Text>
@@ -306,7 +313,6 @@ class LoginScreen extends PureComponent {
                 {Languages.forgotPassword}
               </Text>
             </TouchableOpacity>
-
           </View>
 
           <TouchableOpacity

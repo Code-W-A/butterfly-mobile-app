@@ -4,7 +4,7 @@ import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 import { initializeFirebase } from '@services/Firebase';
 
-import { ensureRecommendationAuth } from './firebaseRecommendationAuth';
+import { requireRecommendationUser } from './firebaseRecommendationAuth';
 import { getMatchPackageIds, getMatchProductIds } from './recommendationMapper';
 
 export const createSpecialistRequest = async ({
@@ -21,7 +21,7 @@ export const createSpecialistRequest = async ({
     throw new Error('Firestore nu este inițializat.');
   }
 
-  const user = await ensureRecommendationAuth(firebaseSetup.auth);
+  const user = await requireRecommendationUser(firebaseSetup.auth);
   const resolvedUserId = userId || user?.uid;
 
   if (!resolvedUserId) {

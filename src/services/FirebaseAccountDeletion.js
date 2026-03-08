@@ -5,13 +5,20 @@ import { deleteUser, signOut } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
 
 import { initializeFirebase } from './Firebase';
+import { clearRecommendationLocalState } from '../features/recommendations/storage/recommendationLocalState';
 
-const USER_SUBCOLLECTIONS_TO_DELETE = ['favorites', 'recommendationHistory'];
+const USER_SUBCOLLECTIONS_TO_DELETE = [
+  'favorites',
+  'favoritePackages',
+  'recommendationHistory',
+];
 
 const deleteCollectionDocs = async (db, pathSegments) => {
   const collectionRef = collection(db, ...pathSegments);
   const snapshot = await getDocs(collectionRef);
-  await Promise.all(snapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref)));
+  await Promise.all(
+    snapshot.docs.map(docSnapshot => deleteDoc(docSnapshot.ref)),
+  );
 };
 
 export const deleteCurrentFirebaseAccount = async () => {
@@ -31,7 +38,11 @@ export const deleteCurrentFirebaseAccount = async () => {
   if (firebaseSetup?.db) {
     await Promise.all(
       USER_SUBCOLLECTIONS_TO_DELETE.map(subcollection =>
-        deleteCollectionDocs(firebaseSetup.db, ['users', userId, subcollection]),
+        deleteCollectionDocs(firebaseSetup.db, [
+          'users',
+          userId,
+          subcollection,
+        ]),
       ),
     );
     await deleteDoc(doc(firebaseSetup.db, 'users', userId));
@@ -41,6 +52,7 @@ export const deleteCurrentFirebaseAccount = async () => {
 
   // Full local cleanup requested for account deletion flow.
   await AsyncStorage.clear();
+  await clearRecommendationLocalState().catch(() => null);
 
   try {
     await signOut(firebaseSetup.auth);
@@ -48,4 +60,3 @@ export const deleteCurrentFirebaseAccount = async () => {
     // Deleting the user usually signs out automatically.
   }
 };
-

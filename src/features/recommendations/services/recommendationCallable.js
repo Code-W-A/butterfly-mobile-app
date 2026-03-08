@@ -10,7 +10,7 @@ import {
   validateRecommendationCallableResponse,
 } from '../types/contracts';
 import { mapCallableErrorToMessage } from './callableErrors';
-import { ensureRecommendationAuth } from './firebaseRecommendationAuth';
+import { requireRecommendationUser } from './firebaseRecommendationAuth';
 
 const CALLABLE_REGION = 'europe-west1';
 const CALLABLE_NAME = 'computeRecommendations';
@@ -30,7 +30,7 @@ export const computeRecommendations = async payload => {
     throw new Error(texts.authMissingFirebase);
   }
 
-  await ensureRecommendationAuth(firebaseSetup.auth);
+  await requireRecommendationUser(firebaseSetup.auth);
 
   try {
     const functions = getFunctions(firebaseSetup.app, CALLABLE_REGION);

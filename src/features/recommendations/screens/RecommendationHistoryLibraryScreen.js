@@ -179,7 +179,7 @@ const RecommendationHistoryLibraryScreen = ({ navigation, theme }) => {
   const backgroundColor = theme?.colors?.background || '#fff';
 
   return (
-    <SafeAreaView>
+    <SafeAreaView topInsetEnabled>
       <View style={[styles.container, { backgroundColor }]}>
         <View style={styles.topBar}>
           <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
